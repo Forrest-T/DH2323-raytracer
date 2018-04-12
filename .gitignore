@@ -30,3 +30,8 @@
 *.exe
 *.out
 *.app
+
+*.aux
+*.log
+*.un~
+*.synctex.gz
