@@ -1,28 +1,45 @@
 \documentclass{article}
 \usepackage[margin=1in]{geometry}
-\title{DH 2323 - Project Specification}
+\title{DH 2323 - Project Specification (for A grade)}
 \author{Forrest Timour, Poorya Ghavamian}
 
 \begin{document}
 \maketitle
 
+Our goal is to try to improve the performance of a basic raytracer as much as possible in order to try to simulate real-time rendering. We have created a list of optimizations that we will consider applying:
 
-
-\begin{enumerate}
-\item GPU raytracing
-\item 
-\item implement intersection tests for other graphical primitives
-\item preprocessing with oct-trees
-\item approximate real-time rendering as much as possible
-\end{enumerate}
+\begin{itemize}
+\item Implement raytracing on a GPU for parallel performance
+\item Optimize the intersection finding algorithm
+    \begin{itemize}
+    \item pre-calculation for faster ray-triangle intersections \cite{ray-triangle}
+    \item preprocessing with \emph{kd}-trees to avoid unnecessary tests\cite{kd-nlogn}\cite{kd-bvh}
+    \begin{itemize}
+        \item surface area heuristic for construction in $\mathcal{O}(n\log n)$
+    \end{itemize}
+    \item first-hit optimization for early termination of shadow ray checks
+    \item implement intersection tests for other graphical primitives
+    \end{itemize}
+\end{itemize}
 
 \begin{thebibliography}{999}
 %cite with \cite{name}
 \bibitem{ray-triangle}
 Doug Baldwin and Michael Weber,
-Fast Ray-Triangle Intersections by Coordinate Transformation,
-\emph{Journal of Computer Graphics Techniques} (JCGT), vol. 5, no. 3, 39-49, 2016
+\emph{Fast Ray-Triangle Intersections by Coordinate Transformation},
+Journal of Computer Graphics Techniques (JCGT), vol. 5, no. 3, 39-49, 2016
 http://jcgt.org/published/0005/03/03/
+
+\bibitem{kd-nlogn}
+Ingo Wald and Vlastimil Havran
+RT06 Conference, Sept. 2006\\
+http://dcgi.felk.cvut.cz/home/havran/ARTICLES/ingo06rtKdtree.pdf
+
+\bibitem{kd-bvh}
+M. Vinkler, V. Havran, J. Bittner
+\emph{Performance Comparison of Bounding Volume Hierarchies and Kd-trees for GPU Ray Tracing", in Computer Graphics Forum}
+DOI: 10.1111/cgf.12776, Volume 8, Issue 35, pages 68-79
+https://onlinelibrary.wiley.com/doi/epdf/10.1111/cgf.12776
 
 \end{thebibliography}
 
