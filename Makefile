@@ -1,6 +1,6 @@
 CMP = g++
 FLAGS = -Wall -Wextra --std=c++17 -lOpenCL
-OBJS = io.o
+OBJS = io.o getInfo.o
 EXES = main
 .PHONY: clean all
 
