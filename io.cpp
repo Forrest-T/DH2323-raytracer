@@ -12,8 +12,9 @@ char *readKernel(const char *filename) {
     fseek(f, 0L, SEEK_END);
     long size = ftell(f);
     rewind(f);
-    char *k = (char*) malloc(size);
+    char *k = (char*) malloc(size+1);
     fread(k, 1, size, f);
+    k[size] = '\0';
     fclose(f);
     return k;
 }
