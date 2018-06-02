@@ -78,23 +78,20 @@ void CL_Manager::initialize() {
     /* create context */
     cl_int status = 0;
     context = clCreateContext(nullptr, 1, &device, nullptr, nullptr, &status);
-    if (status != CL_SUCCESS)
-        fail("Could not create device context");
+    checkError(status, "Could not create device context");
     if (log_level == VERBOSE)
         cout << "Creat device context succeeded" << endl;
     /* create command queue */
     queue = clCreateCommandQueueWithProperties(context, device, NULL, &status);
-    if (status != CL_SUCCESS)
-        fail("Could not create command queue");
+    checkError(status, "Could not create command queue");
     if (log_level == VERBOSE)
         cout << "Create command queue succeeded" << endl;
 }
 
 void CL_Manager::checkError(cl_int result, const string &message) {
-    if (result != CL_SUCCESS && log_level != SILENT)
-            cerr << "OpenCL Error: " << message << endl;
+    if (result != CL_SUCCESS)
+        fail(message);
 }
-
 void CL_Manager::fail(const string &message) {
     if (log_level != SILENT)
         cerr << message << endl;

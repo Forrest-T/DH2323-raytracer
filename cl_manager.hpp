@@ -14,7 +14,6 @@ namespace Raytracer {
 
     class CL_Manager {
     private:
-        void checkError(cl_int result, const std::string &message);
         void fail(const std::string &message);
         void printPlatform(cl_platform_id id);
         void printDevice(cl_device_id id);
@@ -36,6 +35,7 @@ namespace Raytracer {
         void initialize();
         cl_program createProgram(std::vector<std::string>);
         cl_kernel createKernel(cl_program, const std::string &);
+        void checkError(cl_int result, const std::string &message);
     };
 } // namespace CL
 #endif
