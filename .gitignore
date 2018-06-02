@@ -35,3 +35,8 @@
 *.log
 *.un~
 *.synctex.gz
+
+*.bbl
+*.blg
+
+main
