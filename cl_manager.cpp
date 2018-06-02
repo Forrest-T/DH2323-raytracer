@@ -1,18 +1,18 @@
 #include <string>
 #include <iostream>
+#include <sstream>
+#include <fstream>
 #include "cl_manager.hpp"
 
 using namespace Raytracer;
 using namespace std;
 
-Manager::~Manager() {
-    if (kernel  != nullptr) clReleaseKernel(kernel);
-    if (program != nullptr) clReleaseProgram(program);
+CL_Manager::~CL_Manager() {
     if (queue   != nullptr) clReleaseCommandQueue(queue);
     if (context != nullptr) clReleaseContext(context);
 }
 
-void Manager::initialize() {
+void CL_Manager::initialize() {
     /* get platforms */
     cl_uint platform_count = 0;
     checkError(clGetPlatformIDs(0, nullptr, &platform_count),
@@ -37,25 +37,21 @@ void Manager::initialize() {
     } else {
         platform = platforms[0];
         if (log_level == VERBOSE)
-            cout << "Platform choice invalid: defaulted to platform #0" << endl;
+            cerr << "Platform choice invalid: defaulted to platform #0" << endl;
     }
     /* get devices */
     cl_uint device_count = 0;
     cl_device_type type = 0;
+    switch(device_type) {
+        case GPU: type = CL_DEVICE_TYPE_GPU; break;
+        case CPU: type = CL_DEVICE_TYPE_CPU; break;
+        case ANY: type = CL_DEVICE_TYPE_ALL; break;
+    };
     if (log_level == VERBOSE)
         switch(device_type) {
-            case GPU:
-                type = CL_DEVICE_TYPE_GPU;
-                cout << "Querying GPU devices" << endl;
-                break;
-            case CPU:
-                type = CL_DEVICE_TYPE_CPU;
-                cout << "Querying CPU devices" << endl;
-                break;
-            case ANY:
-                type = CL_DEVICE_TYPE_ALL;
-                cout << "Querying all devices" << endl;
-                break;
+            case GPU: cout << "Querying GPU devices" << endl; break;
+            case CPU: cout << "Querying CPU devices" << endl; break;
+            case ANY: cout << "Querying all devices" << endl; break;
         };
     checkError(clGetDeviceIDs(platform, type, 0, nullptr, &device_count),
                "Could not get device count");
@@ -77,7 +73,7 @@ void Manager::initialize() {
     } else { 
         device = devices[0];
         if (log_level == VERBOSE)
-            cout << "Device choice invalid: defaulted to device #0" << endl;
+            cerr << "Device choice invalid: defaulted to device #0" << endl;
     }
     /* create context */
     cl_int status = 0;
@@ -85,36 +81,79 @@ void Manager::initialize() {
     if (status != CL_SUCCESS)
         fail("Could not create device context");
     if (log_level == VERBOSE)
-        cout << "Created device context" << endl;
+        cout << "Creat device context succeeded" << endl;
     /* create command queue */
     queue = clCreateCommandQueueWithProperties(context, device, NULL, &status);
     if (status != CL_SUCCESS)
         fail("Could not create command queue");
     if (log_level == VERBOSE)
-        cout << "Created command queue" << endl;
+        cout << "Create command queue succeeded" << endl;
 }
 
-void Manager::checkError(cl_int result, const string &message) {
+void CL_Manager::checkError(cl_int result, const string &message) {
     if (result != CL_SUCCESS && log_level != SILENT)
             cerr << "OpenCL Error: " << message << endl;
 }
-void Manager::fail(const string &message) {
+
+void CL_Manager::fail(const string &message) {
     if (log_level != SILENT)
         cerr << message << endl;
     exit(EXIT_FAILURE);
 }
 
-void Manager::printPlatform(cl_platform_id id) {
+void CL_Manager::printPlatform(cl_platform_id id) {
     char buf[2048];
     clGetPlatformInfo(id, CL_PLATFORM_VERSION, sizeof(buf), &buf, nullptr);
     cout << "    " << buf << endl;
     clGetPlatformInfo(id, CL_PLATFORM_NAME, sizeof(buf), &buf, nullptr);
     cout << "    " << buf << endl;
 }
-void Manager::printDevice(cl_device_id id) {
+
+void CL_Manager::printDevice(cl_device_id id) {
     char buf[2048];
     clGetDeviceInfo(id, CL_DEVICE_NAME, sizeof(buf), &buf, nullptr);
     cout << "    " << buf << endl;
     clGetDeviceInfo(id, CL_DEVICE_OPENCL_C_VERSION, sizeof(buf), &buf, nullptr);
     cout << "    " << buf << endl;
+}
+
+cl_program CL_Manager::createProgram(std::vector<std::string> filepaths) {
+    /* read source */
+    std::stringstream source_strs;
+    for (const string &filepath : filepaths) {
+        std::ifstream file(filepath);
+        if (!file.good()) {
+            cerr << "Unable to read file: " << filepath << endl;
+            continue;
+        }
+        source_strs << file.rdbuf();
+        file.close();
+    }
+    string source_str = source_strs.str();
+    const char *source = source_str.c_str();
+
+    /* create program */
+    cl_int status = 0;
+    cl_program out = clCreateProgramWithSource(context, 1, &source, nullptr, &status);
+    if (status != CL_SUCCESS)
+        fail("Read program source failed");
+    status = clBuildProgram(out, 1, &device, "-Werror", nullptr, nullptr);
+    if (status != CL_SUCCESS) {
+        char buf[4096];
+        clGetProgramBuildInfo(out, device, CL_PROGRAM_BUILD_LOG, sizeof(buf), &buf, nullptr);
+            fail(string("Failed to build program:")+buf);
+    }
+    if (log_level == VERBOSE)
+        cout << "Build program succeeded" << endl;
+    return out;
+}
+
+cl_kernel CL_Manager::createKernel(cl_program p, const std::string &entry) {
+    cl_int status = 0;
+    cl_kernel out = clCreateKernel(p, entry.c_str(), &status);
+    if (status != CL_SUCCESS)
+        fail("Create kernel failed, error code "+std::to_string(status));
+    if (log_level == VERBOSE)
+        cout << "Create Kernel succeeded" << endl;
+    return out;
 }
