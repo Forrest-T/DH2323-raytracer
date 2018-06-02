@@ -9,7 +9,7 @@ all: main
 %.o: %.cpp
 	$(CMP) -c $< -o $@ $(FLAGS)
 
-main: main.cpp io.o getInfo.o
+main: main.cpp io.o cl_manager.o
 	$(CMP) $^ -o $@ $(FLAGS)
 
 clean:
