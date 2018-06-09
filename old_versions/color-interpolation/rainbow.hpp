@@ -3,7 +3,7 @@
 
 #include <glm/glm.hpp>
 #include <vector>
-#include "SDL.h"
+#include <SDL.h>
 
 /* Display-related constants */
 const int SCREEN_WIDTH = 640;

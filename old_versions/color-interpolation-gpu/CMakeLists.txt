@@ -3,10 +3,7 @@ project (raytracer)
 
 add_executable(main
                main.cpp
-               cl_manager.cpp
-               scene_manager.cpp
-               labs/SDLauxiliary.h
-               labs/TestModel.h)
+               cl_manager.cpp )
 
 find_package (SDL)
 if (NOT SDL_FOUND)
@@ -21,7 +18,7 @@ find_package (OpenCL)
 if (NOT OpenCL_FOUND)
     message (FATAL_ERROR "OpenCL not found!")
 endif (NOT OpenCL_FOUND)
-if (OpenCL_FOUND)
+if (OPENCL_FOUND)
     include_directories(${OpenCL_INCLUDE_DIR})
     target_link_libraries(main ${OpenCL_LIBRARY})
-endif (OpenCL_FOUND)
+endif (OPENCL_FOUND)
