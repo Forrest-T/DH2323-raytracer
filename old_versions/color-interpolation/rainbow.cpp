@@ -1,10 +1,11 @@
 #include <glm/glm.hpp>
 #include <iostream>
+#include <unistd.h>
 #include <vector>
+#include <SDL.h>
+
 #include "SDLauxiliary.h"
 #include "rainbow.hpp"
-#include "SDL.h"
-#include <unistd.h>
 
 using std::vector;
 using glm::vec3;
