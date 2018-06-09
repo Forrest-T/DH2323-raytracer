@@ -1,15 +1,13 @@
 #ifndef CL_MANAGER_HPP_
 #define CL_MANAGER_HPP_
 
-#define CL_HPP_TARGET_OPENCL_VERSION 200
-#define CL_HPP_MINIMUM_OPENCL_VERSION 200
-#include <CL/cl2.hpp>
+#include "OpenCL.hpp"
+#include "structs.hpp"
 
 #include <string>
 #include <vector>
 
 namespace Raytracer {
-    enum log {SILENT, ERROR, VERBOSE};
     enum device {CPU, GPU, ANY};
 
     class CL_Manager {

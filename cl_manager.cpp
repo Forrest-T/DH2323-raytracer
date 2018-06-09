@@ -1,8 +1,9 @@
+#include "cl_manager.hpp"
+#include "structs.hpp"
 #include <string>
 #include <iostream>
 #include <sstream>
 #include <fstream>
-#include "cl_manager.hpp"
 
 using namespace Raytracer;
 using namespace std;
