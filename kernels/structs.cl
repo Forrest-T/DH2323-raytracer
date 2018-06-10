@@ -18,6 +18,7 @@ typedef struct light {
     float4 position;
     float4 color;
     float4 intensity;
+    float4 glob;
 } Light;
 
 typedef struct intersection {

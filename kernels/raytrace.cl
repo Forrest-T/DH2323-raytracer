@@ -1,16 +1,8 @@
-float4 calculateColor(Intersection *i, Light *l) {
-    if (i->triangle == NULL) return (float4)(0,0,0,0);
-    float4 norm = i->triangle->normal;
-    float4 light = l->position - i->position;
-    float dist = dot(light,light);
-    return l->intensity * (i->triangle->color * l->color * max(dot(norm,light),0.f)/(1*M_PI_F*dist));
-}
-
 void calculateIntersection(Intersection *i, Ray *r, __global Triangle *t) {
     float time, u, v, f, distance;
     float4 e1 = t->v1 - t->v0;
     float4 e2 = t->v2 - t->v0;
-    if (fabs(dot(r->direction, cross(e1, e2))) < FLT_EPSILON) return;
+    if (fabs(dot(r->direction, t->normal)) < FLT_EPSILON) return;
     float4 s = r->origin - t->v0;
     float4 c = cross(r->direction, e2);
     f = 1.0/dot(c,e1);
@@ -26,6 +18,24 @@ void calculateIntersection(Intersection *i, Ray *r, __global Triangle *t) {
     i->position = r->origin + time*r->direction;
     i->triangle = t;
     i->distance = distance;
+}
+
+float4 calculateColor(Intersection *i,
+                      Light *l,
+                      __global Triangle *triangles,
+                      int num_triangles) {
+    if (i->triangle == NULL) return (float4)(0,0,0,0);
+    float4 norm = i->triangle->normal;
+    float4 light = l->position - i->position;
+    float dist = dot(light,light);
+    light = normalize(light);
+    Intersection i2 = { .triangle = NULL, .distance = FLT_MAX};
+    Ray r = {i->position + (0.0001f*light), light};
+    for (int j = 0; j < num_triangles; j++)
+        calculateIntersection(&i2, &r, &triangles[j]);
+    if (i2.distance < dist) light = (float4)(0,0,0,0);
+    else light = l->intensity * (i->triangle->color * l->color * max(dot(norm,light),0.f)/(1*M_PI_F*dist));
+    return l->glob * i->triangle->color + light;
 }
 
 __kernel void tracePixel(__global Triangle *triangles,
@@ -47,5 +57,5 @@ __kernel void tracePixel(__global Triangle *triangles,
     for (int j = 0; j < num_triangles; j++)
         calculateIntersection(&i, &r, &triangles[j]);
     calculateIntersection(&i, &r, &triangles[0]);
-    out[x+y*width] = calculateColor(&i, &light);
+    out[x+y*width] = calculateColor(&i, &light, triangles, num_triangles);
 }
