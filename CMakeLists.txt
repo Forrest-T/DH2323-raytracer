@@ -4,9 +4,7 @@ project (raytracer)
 add_executable(main
                main.cpp
                cl_manager.cpp
-               scene_manager.cpp
-               labs/SDLauxiliary.h
-               labs/TestModel.h)
+               scene_manager.cpp)
 
 find_package (SDL)
 if (NOT SDL_FOUND)

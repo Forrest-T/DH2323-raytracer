@@ -12,6 +12,12 @@ namespace Raytracer {
         cl_float4 normal;
         cl_float4 color;
     } Triangle;
+
+    typedef struct light {
+        cl_float4 position;
+        cl_float4 color;
+        cl_float4 intensity;
+    } Light;
 }
 
 #endif

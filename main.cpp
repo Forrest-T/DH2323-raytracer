@@ -3,9 +3,9 @@
 #include "stdlib.h"
 #include "stdio.h"
 
-#include "cl_manager.hpp"
 #include "scene_manager.hpp"
-#include "labs/SDLauxiliary.h"
+#include "cl_manager.hpp"
+#include "SDL_helper.hpp"
 #include "main.hpp"
 
 using namespace Raytracer;
@@ -22,17 +22,26 @@ int main() {
     CL_Manager manager;
     manager.log_level = VERBOSE;
     manager.device_type = GPU;
+    //manager.platform_choice = 1;
+    //manager.device_type = ANY;
     manager.initialize();
 
     // TODO raytracing kernel
-    cl_program program = manager.createProgram({"kernels/interpolate.cl"});
-    cl_kernel kernel = manager.createKernel(program, "interpolate");
+    cl_program program = manager.createProgram({
+            "kernels/structs.cl",
+            "math/Matrix4f.clh",
+            "kernels/raytrace.cl"});
+    cl_kernel kernel = manager.createKernel(program, "tracePixel");
+
+    cl_mem triangleBuf = clCreateBuffer(manager.context, CL_MEM_READ_ONLY, sizeof(Triangle)*SCREEN_WIDTH*SCREEN_HEIGHT, NULL, NULL);
+    cl_mem outBuf = clCreateBuffer(manager.context, CL_MEM_WRITE_ONLY, sizeof(cl_float4)*SCREEN_WIDTH*SCREEN_HEIGHT, NULL, NULL);
 
     t = SDL_GetTicks();
     while (NoQuitMessageSDL()) {
         update();
-        draw(manager, scene, kernel);
+        draw(manager, scene, kernel, triangleBuf, outBuf);
     }
+//    draw(manager, scene, kernel);
 
     SDL_SaveBMP(screen, "screenshot.bmp");
     clReleaseKernel(kernel);
@@ -40,52 +49,75 @@ int main() {
     return EXIT_SUCCESS;
 }
 
-void update() {
+void Raytracer::update() {
     int t2 = SDL_GetTicks();
     float dt = float(t2-t);
     t = t2;
     printf("Render time: %f ms\n",dt);
     Uint8 *keystate = SDL_GetKeyState(0);
-    if (keystate[SDLK_UP])
-        camera.s[3] += camera_speed;
+    if (keystate[SDLK_w])
+        camera.s[2] += camera_speed*dt;
+    if (keystate[SDLK_a])
+        camera.s[0] -= camera_speed*dt;
+    if (keystate[SDLK_s])
+        camera.s[2] -= camera_speed*dt;
+    if (keystate[SDLK_d])
+        camera.s[0] += camera_speed*dt;
+    if (keystate[SDLK_SPACE])
+        camera.s[1] -= camera_speed*dt;
+    if (keystate[SDLK_LSHIFT])
+        camera.s[1] += camera_speed*dt;
     // TODO: handle key states
     // TODO: calculate rotation matrix R
     R = {{1.f,0.f,0.f,0.f,0.f,1.f,0.f,0.f,0.f,0.f,1.f,0.f,0.f,0.f,0.f,1.f}};
 }
 
-void draw(CL_Manager &manager, Scene_Manager &scene, cl_kernel &kernel) {
+void Raytracer::draw(CL_Manager &manager, Scene_Manager &scene, cl_kernel &kernel, cl_mem &triangleBuf, cl_mem &outBuf) {
     scene.log_level = VERBOSE;
     cl_int error = CL_SUCCESS;
-    cl_float4 a = (cl_float4){{1,0,0}};
-    cl_float4 b = (cl_float4){{0,0,1}};
-    cl_float4 c = (cl_float4){{0,1,0}};
-    cl_float4 d = (cl_float4){{1,1,0}};
-    cl_int width = 100;
-    cl_int height = 100;
-    cl_float4 pixels[SCREEN_WIDTH*SCREEN_HEIGHT];
-    cl_mem buf = clCreateBuffer(manager.context, CL_MEM_WRITE_ONLY, sizeof(cl_float4)*width*height, NULL, NULL);
-    error  = clSetKernelArg(kernel, 0, sizeof(cl_float4), &a);
-    error |= clSetKernelArg(kernel, 1, sizeof(cl_float4), &b);
-    error |= clSetKernelArg(kernel, 2, sizeof(cl_float4), &c);
-    error |= clSetKernelArg(kernel, 3, sizeof(cl_float4), &d);
-    error |= clSetKernelArg(kernel, 4, sizeof(cl_int), &width);
-    error |= clSetKernelArg(kernel, 5, sizeof(cl_int), &height);
-    error |= clSetKernelArg(kernel, 6, sizeof(cl_mem), &buf);
-    manager.checkError(error, "failed to set kernel arguments\n");
-    size_t global_size = 100*100;
+    cl_int width = SCREEN_WIDTH;
+    cl_int height = SCREEN_HEIGHT;
+    cl_float4 output[width*height];
 
-    manager.checkError(clEnqueueNDRangeKernel(manager.queue, kernel, 1, NULL, &global_size, NULL, 0, NULL, NULL),"failed to enqueue kernel");
-    manager.checkError(clEnqueueReadBuffer(manager.queue, buf, CL_TRUE, 0, sizeof(cl_float4)*width*height, pixels, 0, NULL, NULL), "failed to read buffer\n");
+    /* kernel parameters */
+    manager.checkError(
+            clEnqueueWriteBuffer(
+                manager.queue, triangleBuf, CL_TRUE, 0,
+                sizeof(Triangle)*width*height, &scene.triangles[0], 0, NULL, NULL),
+            "failed to write to buffer\n");
+    cl_int num_triangles = scene.triangles.size();
+    Light light = {light_pos, light_col, light_dir};
+    // camera already defined
+    cl_int clfocal = focal;
+    // R already defined
+    // width already defined
+
+    error  = clSetKernelArg(kernel, 0, sizeof(cl_mem), &triangleBuf);
+    error |= clSetKernelArg(kernel, 1, sizeof(cl_int), &num_triangles);
+    error |= clSetKernelArg(kernel, 2, sizeof(Light), &light);
+    error |= clSetKernelArg(kernel, 3, sizeof(cl_float4), &camera);
+    error |= clSetKernelArg(kernel, 4, sizeof(cl_int), &clfocal);
+    error |= clSetKernelArg(kernel, 5, sizeof(cl_float16), &R);
+    error |= clSetKernelArg(kernel, 6, sizeof(cl_int), &width);
+    error |= clSetKernelArg(kernel, 7, sizeof(cl_mem), &outBuf);
+    manager.checkError(error, "failed to set kernel arguments\n");
+    size_t global_size = width*height;
+
+    manager.checkError(
+            clEnqueueNDRangeKernel(
+                manager.queue, kernel, 1, NULL, &global_size,
+                NULL, 0, NULL, NULL),
+            "failed to enqueue kernel");
+    manager.checkError(
+            clEnqueueReadBuffer(
+                manager.queue, outBuf, CL_TRUE, 0, 
+                sizeof(cl_float4)*width*height, output, 0, NULL, NULL),
+            "failed to read buffer\n");
 
     if (SDL_MUSTLOCK(screen)) SDL_LockSurface(screen);
     for (int x = 0; x < SCREEN_WIDTH; x++)
         for (int y = 0; y < SCREEN_HEIGHT; y++)
-            PutPixelSDL(screen, x, y, float4_to_vec3(pixels[x+y*SCREEN_WIDTH]));
+            PutPixelSDL(screen, x, y, float4_to_vec3(output[x+y*SCREEN_WIDTH]));
     if (SDL_MUSTLOCK(screen)) SDL_UnlockSurface(screen);
     SDL_UpdateRect(screen, 0, 0, 0, 0);
-
-}
-
-inline glm::vec3 float4_to_vec3(cl_float4 &f) {
-    return vec3(f.s[0], f.s[1], f.s[2]);
 }

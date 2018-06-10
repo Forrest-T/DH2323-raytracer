@@ -1,9 +1,10 @@
-#include "scene_manager.hpp"
 #include <iostream>
 #include <fstream>
 #include <vector>
 #include <cmath>
-#include "labs/TestModel.h"
+
+#include "scene_manager.hpp"
+#include "model.hpp"
 
 using std::ifstream;
 using std::vector;
@@ -93,7 +94,8 @@ namespace Raytracer {
     }
 
     void Scene_Manager::loadBox() {
-        vector<lab_Triangle> box;
+        vector<struct glm_triangle> box;
+        LoadTestModel(box);
         for (const auto &t : box)
             triangles.push_back({{{t.v0.x,t.v0.y,t.v0.z,0}},
                                  {{t.v1.x,t.v1.y,t.v1.z,0}},
@@ -102,6 +104,5 @@ namespace Raytracer {
                                  {{t.color.x,t.color.y,t.color.z,0}}});
     }
 
-    Scene_Manager::~Scene_Manager() {
-    }
+    Scene_Manager::~Scene_Manager() { }
 }
