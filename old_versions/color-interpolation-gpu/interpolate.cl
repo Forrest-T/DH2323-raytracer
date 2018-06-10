@@ -19,6 +19,7 @@ void __kernel mixColors2(float4 tl, float4 tr, float4 bl, float4 br, __global fl
 }
 
 // Why the hell does this produce black???
+// Probably a bug on OpenCL beignet 1.3
 void __kernel mixColors3(float4 tl, float4 tr, float4 bl, float4 br, __global float4 *out, int width, int height) {
     int index = get_global_id(0);
     float f = 0.5;
