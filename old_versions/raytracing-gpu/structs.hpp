@@ -16,7 +16,6 @@ namespace Raytracer {
     typedef struct light {
         cl_float4 position;
         cl_float4 color;
-        cl_float4 intensity;
         cl_float4 glob;
     } Light;
 }

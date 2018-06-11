@@ -93,7 +93,7 @@ void Raytracer::draw(CL_Manager &manager, Scene_Manager &scene, cl_kernel &kerne
                 sizeof(Triangle)*width*height, &scene.triangles[0], 0, NULL, NULL),
             "failed to write to buffer\n");
     cl_int num_triangles = scene.triangles.size();
-    Light light = {light_pos, light_col, light_dir, light_glb};
+    Light light = {light_pos, light_col, light_glb};
     // camera already defined
     cl_int clfocal = focal;
     // R already defined
