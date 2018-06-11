@@ -84,7 +84,7 @@ void Raytracer::draw(CL_Manager &manager, Scene_Manager &scene, cl_kernel &kerne
     cl_int error = CL_SUCCESS;
     cl_int width = SCREEN_WIDTH;
     cl_int height = SCREEN_HEIGHT;
-    cl_float4 output[width*height];
+    cl_float4 *output = new cl_float4[width*height];
 
     /* kernel parameters */
     manager.checkError(
@@ -127,4 +127,5 @@ void Raytracer::draw(CL_Manager &manager, Scene_Manager &scene, cl_kernel &kerne
             PutPixelSDL(screen, x, y, float4_to_vec3(output[x+y*SCREEN_WIDTH]));
     if (SDL_MUSTLOCK(screen)) SDL_UnlockSurface(screen);
     SDL_UpdateRect(screen, 0, 0, 0, 0);
+    delete[] output;
 }
