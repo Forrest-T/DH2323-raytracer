@@ -26,14 +26,13 @@ int main() {
     //manager.device_type = ANY;
     manager.initialize();
 
-    // TODO raytracing kernel
     cl_program program = manager.createProgram({
             "kernels/structs.cl",
             "math/Matrix4f.clh",
             "kernels/raytrace.cl"});
     cl_kernel kernel = manager.createKernel(program, "tracePixel");
 
-    cl_mem triangleBuf = clCreateBuffer(manager.context, CL_MEM_READ_ONLY, sizeof(Triangle)*SCREEN_WIDTH*SCREEN_HEIGHT, NULL, NULL);
+    cl_mem triangleBuf = clCreateBuffer(manager.context, CL_MEM_READ_ONLY, sizeof(Triangle)*scene.triangles.size(), NULL, NULL);
     cl_mem outBuf = clCreateBuffer(manager.context, CL_MEM_WRITE_ONLY, sizeof(cl_float4)*SCREEN_WIDTH*SCREEN_HEIGHT, NULL, NULL);
 
     t = SDL_GetTicks();
@@ -41,11 +40,11 @@ int main() {
         update();
         draw(manager, scene, kernel, triangleBuf, outBuf);
     }
-//    draw(manager, scene, kernel);
 
-    SDL_SaveBMP(screen, "screenshot.bmp");
+    //SDL_SaveBMP(screen, "screenshot.bmp");
     clReleaseKernel(kernel);
     clReleaseProgram(program);
+    // TODO: release buffers?
     return EXIT_SUCCESS;
 }
 
@@ -80,7 +79,6 @@ void Raytracer::update() {
 }
 
 void Raytracer::draw(CL_Manager &manager, Scene_Manager &scene, cl_kernel &kernel, cl_mem &triangleBuf, cl_mem &outBuf) {
-    scene.log_level = VERBOSE;
     cl_int error = CL_SUCCESS;
     cl_int width = SCREEN_WIDTH;
     cl_int height = SCREEN_HEIGHT;
@@ -90,7 +88,7 @@ void Raytracer::draw(CL_Manager &manager, Scene_Manager &scene, cl_kernel &kerne
     manager.checkError(
             clEnqueueWriteBuffer(
                 manager.queue, triangleBuf, CL_TRUE, 0,
-                sizeof(Triangle)*width*height, &scene.triangles[0], 0, NULL, NULL),
+                sizeof(Triangle)*scene.triangles.size(), &scene.triangles[0], 0, NULL, NULL),
             "failed to write to buffer\n");
     cl_int num_triangles = scene.triangles.size();
     Light light = {light_pos, light_col, light_glb};

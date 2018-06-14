@@ -29,10 +29,8 @@ namespace Raytracer {
 
     /* Color and lighting variables */
     cl_float4 light_pos {{0,0,-.7,0}};
-    cl_float4 light_dir {{.5f,.5f,.5f,0}};
     cl_float4 light_col {{5,5,5,0}};
     cl_float4 light_glb {{.1,.1,.1,0}};
-    cl_float4 black     {{0,0,0,0}};
     const float light_speed = 0.0005;
 
     Scene_Manager scene;
