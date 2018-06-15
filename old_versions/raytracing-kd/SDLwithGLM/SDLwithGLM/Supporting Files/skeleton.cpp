@@ -33,8 +33,8 @@ vector<Triangle> triangles;
 void Update();
 void Draw();
 vec3 DirectLight( const Intersection& i );
-bool ClosestIntersection(vec3 start, vec3 dir, const vector<Triangle>& triangles, Intersection& closestIntersection);
-bool intersectionTree(Kdtree* node, glm::vec3 start, glm::vec3 dir, Intersection& treeintersection, int x, int y);
+bool ClosestIntersection(vec3 start, vec3 dir, const vector<Triangle>& xtriangles, Intersection& closestIntersection);
+bool intersectionTree(Kdtree* node, glm::vec3 start, glm::vec3 dir, Intersection& treeintersection, float &closest);
 
 int main( int argc, char* argv[] )
 {
@@ -111,7 +111,8 @@ void Update()
 
 void Draw()
 {
-    
+    float closest = +std::numeric_limits<int>::max();
+    vec3 light;
     Intersection intersection;
     Kdtree *node = new Kdtree();
     node = node->buildTree(triangles);
@@ -125,22 +126,26 @@ void Draw()
             vec3 dir ((x- SCREEN_WIDTH/2), (y- SCREEN_HEIGHT/2), SCREEN_WIDTH);
             dir =  R* dir;
             
-            intersectionTree(node, camerapos, dir, intersection, x, y);
-            /*
-            vec3 dir ((x- SCREEN_WIDTH/2), (y- SCREEN_HEIGHT/2), SCREEN_WIDTH);
-            dir =  R* dir;
+            //intersectionTree(node, camerapos, dir, intersection, x, y);
+        
             vec3 color( 1, 0.5, 0.5 );
             
-            if (ClosestIntersection(camerapos, dir, triangles, intersection)){
+            
+            
+            if (intersectionTree(node, camerapos, dir, intersection, closest)){
                 light = DirectLight(intersection);
                 light = light + indirectLight;
-                PutPixelSDL( screen, x, y, light*  triangles[intersection.index].color );
+                for (int i =0; i< node->triangles.size(); i++){
+                    
+                    PutPixelSDL( screen, x, y, light*  node->triangles[i].color );
+                }
             }
             else {
                 vec3 color (0,0,0);
                 PutPixelSDL( screen, x, y, color );
             }
-            */
+            
+            
         }
     }
     
@@ -150,7 +155,7 @@ void Draw()
     SDL_UpdateRect( screen, 0, 0, 0, 0 );
 }
 //KD TREE NODE INTERSECTION DETECTION
-bool intersectionTree(Kdtree* node, glm::vec3 start, glm::vec3 dir, Intersection& treeintersection, int x, int y){
+bool intersectionTree(Kdtree* node, glm::vec3 start, glm::vec3 dir, Intersection& treeintersection, float &closest){
     vec3 light;
     Intersection nodeIntersect;
     bool leftFlag = false;
@@ -159,17 +164,27 @@ bool intersectionTree(Kdtree* node, glm::vec3 start, glm::vec3 dir, Intersection
         if ( node-> leftchild != nullptr || node->rightchild != nullptr){
         //if(node->leftchild->triangles.size()> 0 || node->rightchild->triangles.size()> 0){ //see if any children has primitives
             if ( node->leftchild !=nullptr){
-                leftFlag = intersectionTree(node->leftchild, start, dir, treeintersection, x, y);
+                leftFlag = intersectionTree(node->leftchild, start, dir, treeintersection, closest);
             }
             if ( node->rightchild !=nullptr){
-                rightFlag = intersectionTree(node->rightchild, start, dir, treeintersection,x ,y);
+                rightFlag = intersectionTree(node->rightchild, start, dir, treeintersection,closest);
             }
             return rightFlag || leftFlag;
         }
         else{
             // WHERE THE BUG IS
             
-            if (ClosestIntersection(camerapos, dir, node->triangles, treeintersection)){
+            if (ClosestIntersection(start, dir, node->triangles, nodeIntersect)){
+                //if (nodeIntersect.distance < closest){
+                    closest = nodeIntersect.distance;
+                    treeintersection = nodeIntersect;
+                    return true;
+               // }
+            }
+                    
+                
+        }
+           /* if (ClosestIntersection(camerapos, dir, node->triangles, treeintersection)){
                 light = DirectLight(treeintersection);
                 light = light + indirectLight;
                 //cout<<triangles[treeintersection.index].midpoint<<std::endl;
@@ -178,8 +193,8 @@ bool intersectionTree(Kdtree* node, glm::vec3 start, glm::vec3 dir, Intersection
             else {
                 vec3 color (0,0,0);
                 PutPixelSDL( screen, x, y, color );
-            }
-        }
+            }*/
+        
         
     }
     return false;
@@ -229,11 +244,12 @@ bool ClosestIntersection(vec3 start, vec3 dir, const vector<Triangle>& xtriangle
             if ( distance > x.x){
                 distance = x.x;
                 index = i;
+                
             }
         }
     }
     
-    if (index >= 0) {
+   if (index >= 0) {
         closestIntersection.distance = distance;
         closestIntersection.index = index;
         closestIntersection.position = start + (distance * dir);
