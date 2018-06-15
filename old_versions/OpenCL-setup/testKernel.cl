@@ -1,4 +1,8 @@
-__kernel void multiply(int a, int b, global int *out) {
+
+
+__kernel void multiply(__global int *a,
+                       __global int *b,
+                       __global int *out) {
     int index = get_global_id(0);
-    out[index] = a*b;
+    out[index] = a[index]*b[index];
 }
