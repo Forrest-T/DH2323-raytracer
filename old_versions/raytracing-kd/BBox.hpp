@@ -35,6 +35,9 @@ public:
         if (tymin > tymax)
             swap(tymin, tymax);
         
+        if ((txmin < 0 && txmax < 0) || (txmin < 0 && tymax < 0))
+            return false;
+
         if (txmin > tymax || tymin > txmax)
             return false; // ray misses, no need to check z
         
@@ -53,12 +56,12 @@ public:
         hit1 = std::fmax(hit1, tzmin);
         hit2 = std::fmin(hit2, tzmax);
 
-        if (hit1 > hit2){
-            hit1 = hit2;
-        }
-        if ( hit1 < 0){
-            hit1= hit2; //secondary ray
-        }
+//        if (hit1 > hit2){
+//            hit1 = hit2;
+//        }
+//        if ( hit1 < 0){
+//            hit1= hit2; //secondary ray
+//        }
         
         boxIntersection.position = start + dir * hit1;
         boxIntersection.distance = hit1;

@@ -5,61 +5,42 @@
 #include "Kdtree.hpp"
 #include "main.hpp"
 
-
 using namespace std;
 using glm::vec3;
 using glm::mat3;
 
-
-
-void Update();
-void Draw();
-vec3 DirectLight( const Intersection& i );
-bool ClosestIntersection(vec3 start, vec3 dir, const vector<Triangle>& xtriangles, Intersection& closestIntersection);
-bool intersectionTree(KD_Node* node, glm::vec3 start, glm::vec3 dir, Intersection& treeintersection);
-
-int main()
-{
-    //SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
-    //SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
-    
+int main() {
     screen = InitializeSDL( SCREEN_WIDTH, SCREEN_HEIGHT );
-    t = SDL_GetTicks();    // Set start value for timer.
-    LoadTestModel(triangles );
+    t = SDL_GetTicks();
+    LoadTestModel(triangles);
     
-    while(NoQuitMessageSDL()) {
-        Draw();
-        Update();
-        
-    }
+//    while(NoQuitMessageSDL()) {
+//        Draw();
+//        Update();
+//    }
+    Draw();
     
     SDL_SaveBMP( screen, "screenshot.bmp" );
     return 0;
 }
 
-void Update()
-{
-    
-    
+void Update() {
     // Compute frame time:
     int t2 = SDL_GetTicks();
     float dt = float(t2-t);
     t = t2;
     cout << "Render time: " << dt << " ms." << endl;
     Uint8* keystate = SDL_GetKeyState( 0 );
-    if( keystate[SDLK_UP] )
-    {
+    if( keystate[SDLK_UP]) {
         // Move camera forward
         camerapos.z +=1;
         
     }
-    if( keystate[SDLK_DOWN] )
-    {
+    if( keystate[SDLK_DOWN]) {
         // Move camera backward
         camerapos.z -=1;
     }
-    if( keystate[SDLK_LEFT] )
-    {
+    if( keystate[SDLK_LEFT]) {
         cout<< "Left"<<endl;
         yaw += 0.5;
         vec3 ent1( cos(yaw) , 0 , sin(yaw) );
@@ -67,8 +48,7 @@ void Update()
         vec3 ent3( -sin(yaw) , 0 , cos(yaw) );
         R = mat3(ent1,ent2,ent3);
     }
-    if( keystate[SDLK_RIGHT] )
-    {
+    if( keystate[SDLK_RIGHT]) {
         cout<< "Right"<<endl;
         yaw -= 0.5;
         vec3 ent1( cos(yaw) , 0 , sin(yaw) );
@@ -100,15 +80,14 @@ void Draw() {
     for( int y=0; y<SCREEN_HEIGHT; ++y ) {
         for( int x=0; x<SCREEN_WIDTH; ++x ) {
             vec3 dir ((x- SCREEN_WIDTH/2), (y- SCREEN_HEIGHT/2), SCREEN_WIDTH);
-            dir =  R* dir;
-            intersection.distance = std::numeric_limits<float>::max();
+            dir =  glm::normalize(R* dir);
+            intersection.distance = FMAX;
             
             if (intersectionTree(tree->root, camerapos, dir, intersection)){
-                light = DirectLight(intersection);
-                light += indirectLight;
-                PutPixelSDL( screen, x, y, light * triangles[intersection.index].color);
-            }
-            else {
+                light = DirectLight(intersection)*triangles[intersection.index].color;
+                light += indirectLight*triangles[intersection.index].color;
+                PutPixelSDL( screen, x, y, light);
+            } else {
                 vec3 color (0,0,0);
                 PutPixelSDL( screen, x, y, color );
             }
@@ -122,23 +101,23 @@ void Draw() {
 
 //KD TREE NODE INTERSECTION DETECTION
 bool intersectionTree(KD_Node* node, glm::vec3 start, glm::vec3 dir, Intersection& treeintersection) {
-    Intersection nodeIntersect;
-    bool leftFlag = false, rightFlag = false;
-    if (!node->bounding_box.BoxIntersection(start, dir, nodeIntersect))
+    Intersection i;
+    if (!node->bounding_box.BoxIntersection(start, dir, i))
         return false;
-    nodeIntersect.distance = std::numeric_limits<float>::max();
+    i.distance = FMAX;
 
     if (node->leaf) {
-        if (ClosestIntersection(start, dir, node->triangles, nodeIntersect)) {
-            if (nodeIntersect.distance < treeintersection.distance){
-                treeintersection = nodeIntersect;
+        if (ClosestIntersection(start, dir, node->triangles, i)) {
+            if (i.distance < treeintersection.distance){
+                treeintersection = i;
                 return true;
             }
         }
         return false;
     }
 
-    Intersection left, right;
+    Intersection left = treeintersection, right = treeintersection;
+    bool leftFlag = false, rightFlag = false;
     leftFlag = intersectionTree(node->leftchild, start, dir, left);
     rightFlag = intersectionTree(node->rightchild, start, dir, right);
     if (!leftFlag && !rightFlag)
@@ -153,63 +132,51 @@ bool intersectionTree(KD_Node* node, glm::vec3 start, glm::vec3 dir, Intersectio
 }
 
 vec3 DirectLight( const Intersection& i ){
-    //find r
-    vec3 r = glm::normalize(lightPos - i.position);
-    //find n
-    vec3 n = triangles[i.index].normal;
-    //do product mult
-    float mult = glm::dot(r, n);
-    //use equation
-    float length = glm::length(lightPos - i.position);
-    float lightout = (max(mult, 0.f))/(4.f*M_PI*length*length);
-    
-    //Shadowboxing
-    Intersection shadow;
-    vec3 shadowdir = glm::normalize(i.position - lightPos);
-    bool intersect= ClosestIntersection(lightPos, shadowdir, triangles, shadow);
-    if (intersect && (shadow.distance < length - 0.001f)){
-        vec3 color (0,0,0);
-        return color;
-    }
-    //return
-    return lightColor*lightout;
+    vec3 norm(triangles[i.index].normal);
+    vec3 light(lightPos - i.position);
+    float dist = dot(light,light);
+    /* look for objects that would block the light */
+    Intersection intersection;
+    intersection.distance = FMAX;
+    light = normalize(light);
+    ClosestIntersection(i.position, light, triangles, intersection);
+    /* if the light was blocked, return black */
+    if (intersection.distance < dist) return vec3(0,0,0);
+    /* otherwise, scale the triangle color by the light color */
+    return triangles[i.index].color * lightColor * float(std::max(dot(norm,light),0.f)) / float(4*M_PI*dist) ;
 }
-bool ClosestIntersection(vec3 start, vec3 dir, const vector<Triangle>& xtriangles, Intersection& closestIntersection){
+bool ClosestIntersection(vec3 start, vec3 d, const vector<Triangle>& triangles, Intersection& intersection){
     
-    float distance = std::numeric_limits<float>::max();
-    int   index = -27;
-    using glm::vec3;
-    using glm::mat3;
-    
-    for (unsigned int i = 0; i < xtriangles.size(); i++){
-        Triangle triangle = xtriangles[i];
-        vec3 v0 = triangle.v0;
-        vec3 v1 = triangle.v1;
-        vec3 v2 = triangle.v2;
-        vec3 e1 = v1 - v0;
-        vec3 e2 = v2 - v0;
-        vec3 b = start - v0;
-        mat3 A( -dir, e1, e2 );
-        vec3 x = glm::inverse( A ) * b;
-        
-        if ((x.x >= 0) && (x.y >= 0) && (x.z >= 0 ) && (x.z + x.y <= 1)){
-            if ( distance > x.x){
-                distance = x.x;
-                index = i;
-                
-            }
+    bool found = false;
+    float t, u, v, f, distance;
+    intersection.distance = std::numeric_limits<float>::max();
+    for (vector<Triangle>::const_iterator it = triangles.begin();
+            it != triangles.end(); ++it) {
+        vec3 e1(it->v1 - it->v0);
+        vec3 e2(it->v2 - it->v0);
+        /* make sure d isn't parallel to the triangle plane */
+        if (fabs(dot(d, cross(e1, e2))) < EPSILON) continue;
+        vec3 s(start - it->v0); // s = start - v0
+        vec3 c = cross(d, e2);  // c = d x e2
+        f = 1.0f/dot(c, e1);    // f = 1/det(-d,e1,e2) = e1(d x e2)
+        u = f * dot(c, s);      // u = f*det(-d,s,e2) = s(d x e2)
+        /* make sure u is in [0,1] */
+        if (u < 0 || u > 1) continue;
+        c = cross(s, e1);       // c = s x e1
+        v = f * dot(c, d);      // v = f*det(-d,e1,s) = d(s x e1)
+        /* make sure v is in [0,1] (and v+u <= 1) */
+        if (v < 0 || v+u > 1) continue;
+        t = f * dot(c, e2);     // t = f*det(s,e1,e2) = e2(s x e1)
+        /* make sure the intersection is in front of the camera */
+        if (t <= 0) continue;
+        distance = t*d.length();
+        found = true;
+        /* keep the closest intersection */
+        if (distance < intersection.distance) {
+            intersection.index = it - triangles.begin();
+            intersection.distance = distance;
+            intersection.position = start+t*d;
         }
     }
-    
-   if (index >= 0) {
-        closestIntersection.distance = distance;
-        closestIntersection.index = index;
-        closestIntersection.position = start + (distance * dir);
-        return true;
-    }
-    return false;
+    return found;
 }
-
-
-
-

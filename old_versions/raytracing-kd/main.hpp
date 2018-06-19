@@ -5,9 +5,13 @@
 #include <SDL.h>
 #include <vector>
 #include "structs.hpp"
+#include "Triangle.hpp"
+#include "Kdtree.hpp"
 using glm::vec3;
 using glm::mat3;
 using std::vector;
+
+static const float FMAX = std::numeric_limits<float>::max();
 
 vec3 indirectLight = 0.5f*vec3( 1, 1, 1 );
 vec3 lightPos( 0, -0.5, -0.7 );
@@ -24,5 +28,10 @@ int t;
 vec3 camerapos (0,0,-3);
 vector<Triangle> triangles;
 
+void Update();
+void Draw();
+vec3 DirectLight( const Intersection& i );
+bool ClosestIntersection(vec3 start, vec3 dir, const vector<Triangle>& xtriangles, Intersection& closestIntersection);
+bool intersectionTree(KD_Node* node, glm::vec3 start, glm::vec3 dir, Intersection& treeintersection);
 
 #endif
