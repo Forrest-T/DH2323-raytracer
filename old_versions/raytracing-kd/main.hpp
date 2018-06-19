@@ -13,6 +13,7 @@ using std::vector;
 
 static const float FMAX = std::numeric_limits<float>::max();
 
+KD_Tree *tree;
 vec3 indirectLight = 0.5f*vec3( 1, 1, 1 );
 vec3 lightPos( 0, -0.5, -0.7 );
 vec3 lightColor = 14.f * vec3( 1, 1, 1 );

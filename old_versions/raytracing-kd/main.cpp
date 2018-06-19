@@ -3,6 +3,7 @@
 #include "SDL.h"
 #include "SDL_helper.hpp"
 #include "Kdtree.hpp"
+#include "model.hpp"
 #include "main.hpp"
 
 using namespace std;
@@ -19,6 +20,7 @@ int main() {
 //        Update();
 //    }
     Draw();
+    Update();
     
     SDL_SaveBMP( screen, "screenshot.bmp" );
     return 0;
@@ -73,7 +75,7 @@ void Update() {
 void Draw() {
     vec3 light;
     Intersection intersection;
-    KD_Tree *tree = new KD_Tree(triangles);
+    tree = new KD_Tree(triangles);
     if( SDL_MUSTLOCK(screen) )
         SDL_LockSurface(screen);
     
@@ -94,6 +96,7 @@ void Draw() {
         }
     }
     
+    delete tree;
     if( SDL_MUSTLOCK(screen) )
         SDL_UnlockSurface(screen);
     SDL_UpdateRect( screen, 0, 0, 0, 0 );
@@ -139,7 +142,7 @@ vec3 DirectLight( const Intersection& i ){
     Intersection intersection;
     intersection.distance = FMAX;
     light = normalize(light);
-    ClosestIntersection(i.position, light, triangles, intersection);
+    intersectionTree(tree->root, i.position, light, intersection);
     /* if the light was blocked, return black */
     if (intersection.distance < dist) return vec3(0,0,0);
     /* otherwise, scale the triangle color by the light color */
@@ -170,12 +173,12 @@ bool ClosestIntersection(vec3 start, vec3 d, const vector<Triangle>& triangles, 
         /* make sure the intersection is in front of the camera */
         if (t <= 0) continue;
         distance = t*d.length();
-        found = true;
         /* keep the closest intersection */
         if (distance < intersection.distance) {
             intersection.index = it - triangles.begin();
             intersection.distance = distance;
             intersection.position = start+t*d;
+            found = true;
         }
     }
     return found;

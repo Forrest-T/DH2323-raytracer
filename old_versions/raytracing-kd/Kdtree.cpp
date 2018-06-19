@@ -1,66 +1,39 @@
 #include "Kdtree.hpp"
 
-static KD_Node *KD_Tree::build(const std::vector<Triangle> &trg){
-    std::vector<Triangle> leftTriangles;
-    std::vector<Triangle> rightTriangles;
-    glm::vec3 midpoint;
-    glm::vec3 minp(std::numeric_limits<float>::max());
-    glm::vec3 maxp(std::numeric_limits<float>::min());
-    KD_Node* node = new KD_Node();
-    //node->bounding_box;
-    node->leftchild = NULL;
-    node->rightchild = NULL;
-    node->triangles = trg;
-    
-    if (trg.size() == 0)
-        return;
-    if (trg.size() == 1){
-        node->bounding_box = trg[0].boundingBox;
-        node->leftchild = new KD_Node();
-        node->rightchild = new KD_Node();
-        //node->leftchild->triangles;
-        //node->rightchild->triangles;
-    }
-    //GET OVERALL BOUNDING BOX
-    for (unsigned int i=0; i < trg.size(); i++){
-        glm::vec3 localmin = trg[i].boundingBox.min;
-        glm::vec3 localmax = trg[i].boundingBox.max;
-        
-        minp.x = std::min( minp.x, localmin.x);
-        minp.y = std::min( minp.y, localmin.y);
-        minp.z = std::min( minp.z, localmin.z);
-        
-        maxp.x = std::max( maxp.x, localmax.x);
-        maxp.y = std::max( maxp.y, localmax.y);
-        maxp.z = std::max( maxp.z, localmax.z);
-        
-    }
-    node->bounding_box =  BBox(minp,maxp);
-    for (unsigned int i=0; i< trg.size(); i++){
-        //trg[i].ComputeNormal();
-        midpoint = midpoint + (trg[i].midpoint /(float)trg.size());
-        
-    }
-    int longest = node->bounding_box.longestaxis();
-    for (unsigned int i=0; i < trg.size();i++){
-        switch(longest){
-            case 0:
-                midpoint.x >= trg[i].midpoint.x ? rightTriangles.push_back(trg[i]) : leftTriangles.push_back(trg[i]);
-                break;
-            case 1:
-                midpoint.y >= trg[i].midpoint.y ? rightTriangles.push_back(trg[i]) : leftTriangles.push_back(trg[i]);
-                break;
-            case 2:
-                midpoint.z >= trg[i].midpoint.z ? rightTriangles.push_back(trg[i]) : leftTriangles.push_back(trg[i]);
-                break;
+bool KD_Tree::intersect(bool(*fptr)(const vec3&,const vec3&,const vector<Triangle>&,Intersection&,int),
+                   vec3 start, vec3 dir, Intersection &i, int exclude) {
+    return intersectHelper(fptr, root, start, dir, i, exclude);
+}
+
+bool KD_Tree::intersectHelper(bool(*fptr)(const vec3&,const vec3&,const vector<Triangle>&,Intersection&,int),
+                   KD_Node *node, vec3 start, vec3 dir,
+                   Intersection &i, int exclude) {
+    Intersection temp;
+    if (!node->bounding_box.BoxIntersection(start, dir, temp))
+        return false;
+    temp.distance = FMAX;
+
+    if (node->leaf) {
+        if ((*fptr)(start, dir, node->triangles, temp, exclude)) {
+            if (temp.distance < i.distance) {
+                i = temp;
+                return true;
+            }
         }
+        return false;
     }
-    if (leftTriangles.size()> 0 && rightTriangles.size() != 0) {
-        node->leftchild = new KD_Node();
-        node->leftchild->buildTree(leftTriangles);
-    }
-    if (leftTriangles.size()!= 0 && rightTriangles.size() > 0) {
-        node->rightchild = new KD_Node();
-        node->rightchild->buildTree(rightTriangles);
-    }
+
+    Intersection left = i, right = i;
+    bool leftFlag = false, rightFlag = false;
+    leftFlag = intersectHelper(fptr, node->leftchild, start, dir, left, exclude);
+    rightFlag = intersectHelper(fptr, node->rightchild, start, dir, right, exclude);
+    if (!leftFlag && !rightFlag)
+        return false;
+    else if (!leftFlag)
+        i = right;
+    else if (!rightFlag)
+        i = left;
+    else
+        i = left.distance < right.distance ? left : right;
+    return true;
 }

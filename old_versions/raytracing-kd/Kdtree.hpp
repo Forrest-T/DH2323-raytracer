@@ -7,8 +7,11 @@ using glm::vec3;
 #include <vector>
 using std::vector;
 
-#include "model.hpp"
+#include "Triangle.hpp"
 #include "structs.hpp"
+#include "BBox.hpp"
+
+static const float FMAX = std::numeric_limits<float>::max();
 
 typedef enum dimension {X, Y, Z} Dimension;
 
@@ -30,7 +33,13 @@ public:
     KD_Tree(const vector<Triangle> &trg) { root = build(trg); }
     ~KD_Tree() { delete root; }
 
+    bool intersect(bool(*)(const vec3&, const vec3&, const vector<Triangle>&, Intersection&, int),
+                   vec3, vec3, Intersection&, int=-1);
+
 private:
+    bool intersectHelper(bool(*)(const vec3&, const vec3&, const vector<Triangle>&, Intersection&, int),
+                   KD_Node *, vec3, vec3, Intersection&, int);
+
     static KD_Node *build(vector<Triangle> trg){
         if (trg.empty())
             return nullptr;
