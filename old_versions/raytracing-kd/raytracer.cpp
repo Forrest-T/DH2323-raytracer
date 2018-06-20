@@ -6,8 +6,9 @@
 #include "SDL_helper.hpp"
 #include "raytracer.hpp"
 #include "Triangle.hpp"
-#include "BBox.hpp"
+#include "structs.hpp"
 #include "model.hpp"
+#include "BBox.hpp"
 
 using std::cout;
 using std::endl;
@@ -20,10 +21,13 @@ int main() {
     LoadTestModel(triangles);
     t = SDL_GetTicks();    // Set start value for timer.
 
-    while(NoQuitMessageSDL()) {
-        update();
-        draw();
-    }
+//    while(NoQuitMessageSDL()) {
+//        update();
+//        draw();
+//    }
+    update();
+    draw();
+    update();
 
     SDL_SaveBMP(screen, "screenshot.bmp");
     return 0;
@@ -82,9 +86,10 @@ void draw() {
                     &ClosestIntersection,
                     camera,
                     normalize(R*vec3(x-SCREEN_HEIGHT/2, y-SCREEN_HEIGHT/2, focal)),
-                    i, -1)
+                    i, nullptr)
                  // use result to determine what color to draw
-                 )? DirectLight(i)+light_dir*triangles[i.index].color: black);
+                 // TODO: BUG HERE
+                 )? DirectLight(i)+light_dir*(*(Triangle*)i.triangle).color: black);
         }
 
     if(SDL_MUSTLOCK(screen))
@@ -95,20 +100,20 @@ void draw() {
 }
 
 bool ClosestIntersection(const glm::vec3 &start, const glm::vec3 &d,
-                         const std::vector<Triangle> &triangles,
-                         Intersection &intersection, int exclude) {
+                         const std::vector<Triangle*> &triangles,
+                         Intersection &intersection, void *exclude) {
     bool found = false;
     float t, u, v, f, distance;
     intersection.distance = std::numeric_limits<float>::max();
-    for (vector<Triangle>::const_iterator it = triangles.begin();
+    for (vector<Triangle*>::const_iterator it = triangles.begin();
             it != triangles.end(); ++it) {
         /* don't count intersections with this particular triangle */
-        if (exclude >= 0 && (triangles.begin()+exclude) == it) continue;
-        vec3 e1(it->v1 - it->v0);
-        vec3 e2(it->v2 - it->v0);
+        if (exclude == *it) continue;
+        vec3 e1((*it)->v1 - (*it)->v0);
+        vec3 e2((*it)->v2 - (*it)->v0);
         /* make sure d isn't parallel to the triangle plane */
         if (fabs(DOT(d, cross(e1, e2))) < EPSILON) continue;
-        vec3 s(start - it->v0); // s = start - v0
+        vec3 s(start - (*it)->v0); // s = start - v0
         vec3 c = cross(d, e2);  // c = d x e2
         f = 1.0f/DOT(c, e1);    // f = 1/det(-d,e1,e2) = e1(d x e2)
         u = f * DOT(c, s);      // u = f*det(-d,s,e2) = s(d x e2)
@@ -125,7 +130,7 @@ bool ClosestIntersection(const glm::vec3 &start, const glm::vec3 &d,
         found = true;
         /* keep the closest intersection */
         if (distance < intersection.distance) {
-            intersection.index = it - triangles.begin();
+            intersection.triangle = *it;
             intersection.distance = distance;
             intersection.position = start+t*d;
         }
@@ -134,16 +139,16 @@ bool ClosestIntersection(const glm::vec3 &start, const glm::vec3 &d,
 }
 
 vec3 DirectLight(const intersection& i) {
-    vec3 norm(triangles[i.index].normal);
+    vec3 norm((*(Triangle*)i.triangle).normal);
     vec3 light(light_pos - i.position);
     float dist = DOT(light,light);
     /* look for objects that would block the light */
     Intersection intersection;
     intersection.distance = FMAX;
     light = normalize(light);
-    tree->intersect(&ClosestIntersection, i.position, light, intersection, i.index);
+    tree->intersect(&ClosestIntersection, i.position, light, intersection, i.triangle);
     /* if the light was blocked, return black */
     if (intersection.distance < dist) return black;
     /* otherwise, scale the triangle color by the light color */
-    return triangles[i.index].color * light_col * float(MAX(DOT(norm,light),0.f)) / float(4*M_PI*dist) ;
+    return (*(Triangle*)i.triangle).color * light_col * float(MAX(DOT(norm,light),0.f)) / float(4*M_PI*dist) ;
 }

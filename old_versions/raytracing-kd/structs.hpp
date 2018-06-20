@@ -7,7 +7,7 @@ using glm::vec3;
 typedef struct intersection {
     vec3 position;
     float distance;
-    int index;
+    void *triangle;
 } Intersection;
 
 typedef struct ray {

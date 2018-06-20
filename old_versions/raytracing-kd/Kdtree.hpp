@@ -20,7 +20,7 @@ public:
     KD_Node* leftchild;
     KD_Node* rightchild;
     BBox bounding_box;
-    vector<Triangle> triangles;
+    vector<Triangle*> triangles;
     Dimension dimension;
     bool leaf;
 };
@@ -30,29 +30,34 @@ public:
     KD_Node *root;
     // TODO: minimum splitting split cutoff
 
-    KD_Tree(const vector<Triangle> &trg) { root = build(trg); }
+    KD_Tree(vector<Triangle> &trg) { 
+        vector<Triangle*> tps(trg.size());
+        for (unsigned int i = 0; i < trg.size(); i++)
+            tps[i] = &(trg[i]);
+        root = build(tps); 
+    }
     ~KD_Tree() { delete root; }
 
-    bool intersect(bool(*)(const vec3&, const vec3&, const vector<Triangle>&, Intersection&, int),
-                   vec3, vec3, Intersection&, int=-1);
+    bool intersect(bool(*)(const vec3&, const vec3&, const vector<Triangle*>&, Intersection&, void*),
+                   vec3, vec3, Intersection&, void* = nullptr);
 
 private:
-    bool intersectHelper(bool(*)(const vec3&, const vec3&, const vector<Triangle>&, Intersection&, int),
-                   KD_Node *, vec3, vec3, Intersection&, int);
+    bool intersectHelper(bool(*)(const vec3&, const vec3&, const vector<Triangle*>&, Intersection&, void*),
+                   KD_Node *, vec3, vec3, Intersection&, void*);
 
-    static KD_Node *build(vector<Triangle> trg){
+    static KD_Node *build(vector<Triangle*> trg){
         if (trg.empty())
             return nullptr;
-        vector<Triangle> leftTriangles;
-        vector<Triangle> rightTriangles;
+        vector<Triangle*> leftTriangles;
+        vector<Triangle*> rightTriangles;
         vec3 midpoint(0);
         vec3 minp(std::numeric_limits<float>::max());
         vec3 maxp(std::numeric_limits<float>::min());
 
         // GET OVERALL BOUNDING BOX
         for (const auto &t : trg) {
-            vec3 localmin(t.boundingBox.min);
-            vec3 localmax(t.boundingBox.max);
+            vec3 localmin(t->boundingBox.min);
+            vec3 localmax(t->boundingBox.max);
             
             minp.x = std::min(minp.x, localmin.x);
             minp.y = std::min(minp.y, localmin.y);
@@ -64,31 +69,31 @@ private:
         }
         BBox bb(minp,maxp);
         for (const auto &t : trg)
-            midpoint += t.midpoint;
+            midpoint += t->midpoint;
         midpoint /= static_cast<float>(trg.size());
         int longest = bb.longestaxis();
         switch(longest){
             case 0:
                 for (const auto &t : trg) {
-                    if (t.boundingBox.max.x >= midpoint.x)
+                    if (t->boundingBox.max.x >= midpoint.x)
                         rightTriangles.push_back(t);
-                    if (t.boundingBox.min.x <= midpoint.x)
+                    if (t->boundingBox.min.x <= midpoint.x)
                         leftTriangles.push_back(t);
                 }
                 break;
             case 1:
                 for (const auto &t : trg) {
-                    if (t.boundingBox.max.y >= midpoint.y)
+                    if (t->boundingBox.max.y >= midpoint.y)
                         rightTriangles.push_back(t);
-                    if (t.boundingBox.min.y <= midpoint.y)
+                    if (t->boundingBox.min.y <= midpoint.y)
                         leftTriangles.push_back(t);
                 }
                 break;
             case 2:
                 for (const auto &t : trg) {
-                    if (t.boundingBox.max.z >= midpoint.z)
+                    if (t->boundingBox.max.z >= midpoint.z)
                         rightTriangles.push_back(t);
-                    if (t.boundingBox.min.z <= midpoint.z)
+                    if (t->boundingBox.min.z <= midpoint.z)
                         leftTriangles.push_back(t);
                 }
                 break;

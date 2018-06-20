@@ -1,13 +1,13 @@
 #include "Kdtree.hpp"
 
-bool KD_Tree::intersect(bool(*fptr)(const vec3&,const vec3&,const vector<Triangle>&,Intersection&,int),
-                   vec3 start, vec3 dir, Intersection &i, int exclude) {
+bool KD_Tree::intersect(bool(*fptr)(const vec3&,const vec3&,const vector<Triangle*>&,Intersection&,void*),
+                   vec3 start, vec3 dir, Intersection &i, void *exclude) {
     return intersectHelper(fptr, root, start, dir, i, exclude);
 }
 
-bool KD_Tree::intersectHelper(bool(*fptr)(const vec3&,const vec3&,const vector<Triangle>&,Intersection&,int),
+bool KD_Tree::intersectHelper(bool(*fptr)(const vec3&,const vec3&,const vector<Triangle*>&,Intersection&,void*),
                    KD_Node *node, vec3 start, vec3 dir,
-                   Intersection &i, int exclude) {
+                   Intersection &i, void *exclude) {
     Intersection temp;
     if (!node->bounding_box.BoxIntersection(start, dir, temp))
         return false;

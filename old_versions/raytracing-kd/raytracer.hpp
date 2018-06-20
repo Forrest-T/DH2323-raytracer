@@ -46,8 +46,8 @@ std::vector<Triangle> triangles;
  */
 bool ClosestIntersection(const glm::vec3 &start,
                          const glm::vec3 &dir,
-                         const std::vector<Triangle>&,
-                         Intersection&, int exclude = -1);
+                         const std::vector<Triangle*>&,
+                         Intersection&, void *exclude = nullptr);
 
 glm::vec3 DirectLight(const intersection&);
 
