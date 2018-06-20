@@ -78,14 +78,11 @@ void draw() {
             i.distance = FMAX;
             PutPixelSDL(screen, x, y,
                 // calculate intersection
-//                (ClosestIntersection(
-//                    camera,
-//                    normalize(R*vec3(x-SCREEN_HEIGHT/2, y-SCREEN_HEIGHT/2, focal)),
-//                    triangles, i)
                 (tree->intersect(
                     &ClosestIntersection,
                     camera,
                     normalize(R*vec3(x-SCREEN_HEIGHT/2, y-SCREEN_HEIGHT/2, focal)),
+//                    normalize(R*vec3(382-SCREEN_HEIGHT/2, 295-SCREEN_HEIGHT/2, focal)),
                     i, nullptr)
                  // use result to determine what color to draw
                  // TODO: BUG HERE
@@ -146,7 +143,7 @@ vec3 DirectLight(const intersection& i) {
     Intersection intersection;
     intersection.distance = FMAX;
     light = normalize(light);
-    tree->intersect(&ClosestIntersection, i.position, light, intersection, i.triangle);
+    tree->intersect(&ClosestIntersection, i.position + (0.001f*light), light, intersection, i.triangle);
     /* if the light was blocked, return black */
     if (intersection.distance < dist) return black;
     /* otherwise, scale the triangle color by the light color */
