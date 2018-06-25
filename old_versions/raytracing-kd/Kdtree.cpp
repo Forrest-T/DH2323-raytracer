@@ -9,8 +9,6 @@ bool KD_Tree::intersectHelper(bool(*fptr)(const vec3&,const vec3&,const vector<T
                    KD_Node *node, vec3 start, vec3 dir,
                    Intersection &i, void *exclude) {
     Intersection temp;
-    if (!node->bounding_box.BoxIntersection(start, dir, temp))
-        return false;
     temp.distance = FMAX;
 
     if (node->leaf) {
@@ -25,8 +23,10 @@ bool KD_Tree::intersectHelper(bool(*fptr)(const vec3&,const vec3&,const vector<T
 
     Intersection left = i, right = i;
     bool leftFlag = false, rightFlag = false;
-    leftFlag = intersectHelper(fptr, node->leftchild, start, dir, left, exclude);
-    rightFlag = intersectHelper(fptr, node->rightchild, start, dir, right, exclude);
+    if (node->leftchild->bounding_box.BoxIntersection(start, dir, temp))
+        leftFlag = intersectHelper(fptr, node->leftchild, start, dir, left, exclude);
+    if (node->rightchild->bounding_box.BoxIntersection(start, dir, temp))
+        rightFlag = intersectHelper(fptr, node->rightchild, start, dir, right, exclude);
     if (!leftFlag && !rightFlag)
         return false;
     else if (!leftFlag)

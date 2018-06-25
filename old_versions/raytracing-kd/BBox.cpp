@@ -30,7 +30,7 @@ bool BBox::BoxIntersection(vec3 start, vec3 dir, Intersection& boxIntersection){
     if (tymin > tymax)
         swap(tymin, tymax);
     
-    if ((txmin < 0 && txmax < 0) || (txmin < 0 && tymax < 0))
+    if (txmax < 0 || tymax < 0)
         return false;
 
     if (txmin > tymax || tymin > txmax)
@@ -45,7 +45,7 @@ bool BBox::BoxIntersection(vec3 start, vec3 dir, Intersection& boxIntersection){
     if (tzmin > tzmax)
         swap(tzmin, tzmax);
     
-    if (tzmax < hit1 || tzmin > hit2)
+    if (tzmax < hit1-EPSILON || tzmin > hit2+EPSILON)
         return false; //ray misses cube in z dimension
 
     hit1 = std::fmax(hit1, tzmin);

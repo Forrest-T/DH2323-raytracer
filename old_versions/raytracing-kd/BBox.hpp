@@ -6,7 +6,7 @@
 
 using glm::vec3;
 
-const float EPSILON = std::numeric_limits<float>::epsilon();
+const float EPSILON = 0.00001f;
 
 class BBox{
 public:

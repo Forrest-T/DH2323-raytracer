@@ -82,7 +82,8 @@ void draw() {
                     camera,
                     normalize(R*vec3(x-SCREEN_HEIGHT/2, y-SCREEN_HEIGHT/2, focal)),
                     i, nullptr)
-                 )? DirectLight(i)+light_dir*(*(Triangle*)i.triangle).color: black);
+                 //)? DirectLight(i)+light_dir*(*(Triangle*)i.triangle).color: black);
+                 )? DirectLight(i)+light_dir*(*(Triangle*)i.triangle).color: (printf("%d %d\n",x,y),black));
         }
 
     if(SDL_MUSTLOCK(screen))
@@ -111,11 +112,11 @@ bool ClosestIntersection(const glm::vec3 &start, const glm::vec3 &d,
         f = 1.0f/DOT(c, e1);    // f = 1/det(-d,e1,e2) = e1(d x e2)
         u = f * DOT(c, s);      // u = f*det(-d,s,e2) = s(d x e2)
         /* make sure u is in [0,1] */
-        if (u < 0 || u > 1) continue;
+        if (u < 0-EPSILON || u > 1+EPSILON) continue;
         c = cross(s, e1);       // c = s x e1
         v = f * DOT(c, d);      // v = f*det(-d,e1,s) = d(s x e1)
         /* make sure v is in [0,1] (and v+u <= 1) */
-        if (v < 0 || v+u > 1+EPSILON) continue;
+        if (v < 0-EPSILON || v+u > 1+EPSILON) continue;
         t = f * DOT(c, e2);     // t = f*det(s,e1,e2) = e2(s x e1)
         /* make sure the intersection is in front of the camera */
         if (t <= 0) continue;
