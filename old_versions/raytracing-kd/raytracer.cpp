@@ -77,15 +77,11 @@ void draw() {
         for(int x=0; x < SCREEN_WIDTH; ++x) {
             i.distance = FMAX;
             PutPixelSDL(screen, x, y,
-                // calculate intersection
                 (tree->intersect(
                     &ClosestIntersection,
                     camera,
                     normalize(R*vec3(x-SCREEN_HEIGHT/2, y-SCREEN_HEIGHT/2, focal)),
-//                    normalize(R*vec3(382-SCREEN_HEIGHT/2, 295-SCREEN_HEIGHT/2, focal)),
                     i, nullptr)
-                 // use result to determine what color to draw
-                 // TODO: BUG HERE
                  )? DirectLight(i)+light_dir*(*(Triangle*)i.triangle).color: black);
         }
 
@@ -119,7 +115,7 @@ bool ClosestIntersection(const glm::vec3 &start, const glm::vec3 &d,
         c = cross(s, e1);       // c = s x e1
         v = f * DOT(c, d);      // v = f*det(-d,e1,s) = d(s x e1)
         /* make sure v is in [0,1] (and v+u <= 1) */
-        if (v < 0 || v+u > 1) continue;
+        if (v < 0 || v+u > 1+EPSILON) continue;
         t = f * DOT(c, e2);     // t = f*det(s,e1,e2) = e2(s x e1)
         /* make sure the intersection is in front of the camera */
         if (t <= 0) continue;

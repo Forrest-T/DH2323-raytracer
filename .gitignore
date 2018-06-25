@@ -41,6 +41,8 @@
 
 main
 CMakeCache.txt
+screenshot.bmp
+raytracer
 CMakeFiles/
 Makefile
 cmake_install.cmake

@@ -66,8 +66,15 @@ void draw() {
 
     Intersection i;
 
+    // DEBUG
+    ClosestIntersection(
+            camera,
+            R*vec3(370-SCREEN_HEIGHT/2, 370-SCREEN_HEIGHT/2, focal),
+            triangles, i);
+
     for(int y=0; y < SCREEN_HEIGHT; ++y)
         for(int x=0; x < SCREEN_WIDTH; ++x)
+            //PutPixelSDL(screen, x, y,
             PutPixelSDL(screen, x, y,
                 // calculate intersection
                 (ClosestIntersection(
@@ -106,7 +113,7 @@ bool ClosestIntersection(const glm::vec3 &start, const glm::vec3 &d,
         c = cross(s, e1);       // c = s x e1
         v = f * DOT(c, d);      // v = f*det(-d,e1,s) = d(s x e1)
         /* make sure v is in [0,1] (and v+u <= 1) */
-        if (v < 0 || v+u > 1) continue;
+        if (v < 0 || v+u > 1+EPSILON) continue;
         t = f * DOT(c, e2);     // t = f*det(s,e1,e2) = e2(s x e1)
         /* make sure the intersection is in front of the camera */
         if (t <= 0) continue;
