@@ -51,10 +51,13 @@ bool BBox::BoxIntersection(vec3 start, vec3 dir, Intersection& boxIntersection){
     hit1 = std::fmax(hit1, tzmin);
     hit2 = std::fmin(hit2, tzmax);
 
+    if (hit2 > 0.f)
+        hit1 = std::fmax(hit1,0.f);
+
     boxIntersection.position = start + dir * hit1;
     boxIntersection.distance = hit1;
 
-    return (boxIntersection.distance > 0.f);
+    return (boxIntersection.distance >= 0.f);
 }
 
 int BBox::longestaxis(){

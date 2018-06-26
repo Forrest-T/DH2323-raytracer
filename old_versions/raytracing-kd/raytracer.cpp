@@ -82,8 +82,7 @@ void draw() {
                     camera,
                     normalize(R*vec3(x-SCREEN_HEIGHT/2, y-SCREEN_HEIGHT/2, focal)),
                     i, nullptr)
-                 //)? DirectLight(i)+light_dir*(*(Triangle*)i.triangle).color: black);
-                 )? DirectLight(i)+light_dir*(*(Triangle*)i.triangle).color: (printf("%d %d\n",x,y),black));
+                 )? DirectLight(i)+light_dir*(*(Triangle*)i.triangle).color: black);
         }
 
     if(SDL_MUSTLOCK(screen))
