@@ -2,9 +2,9 @@ cmake_minimum_required (VERSION 2.6)
 project (raytracer)
 
 add_executable(main
-               main.cpp
-               cl_manager.cpp
-               scene_manager.cpp)
+               src/main.cpp
+               src/cl_manager.cpp
+               src/scene_manager.cpp)
 
 find_package (SDL)
 if (NOT SDL_FOUND)

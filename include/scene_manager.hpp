@@ -3,6 +3,7 @@
 
 #include "OpenCL.hpp"
 #include "structs.hpp"
+#include "Triangle.hpp"
 #include <vector>
 
 namespace Raytracer {
@@ -15,8 +16,6 @@ namespace Raytracer {
         void loadBox();
         ~Scene_Manager();
     private:
-        // NOT a general purpose PLY reader
-        void readDragon(std::ifstream&);
         cl_float4 normal(cl_float4 a, cl_float4 b, cl_float4 c);
         void normalize(cl_float4&);
     };

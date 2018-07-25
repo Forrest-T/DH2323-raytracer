@@ -3,8 +3,8 @@
 #include <sstream>
 #include <fstream>
 
-#include "cl_manager.hpp"
-#include "structs.hpp"
+#include "../include/cl_manager.hpp"
+#include "../include/structs.hpp"
 
 using namespace Raytracer;
 using namespace std;

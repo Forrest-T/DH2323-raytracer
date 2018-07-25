@@ -1,12 +1,14 @@
-#include "OpenCL.hpp"
+#include "../include/OpenCL.hpp"
 
 #include "stdlib.h"
 #include "stdio.h"
 
-#include "scene_manager.hpp"
-#include "cl_manager.hpp"
-#include "SDL_helper.hpp"
-#include "main.hpp"
+#include "../include/scene_manager.hpp"
+#include "../include/cl_manager.hpp"
+#include "../include/SDL_helper.hpp"
+#include "../include/KdArray.hpp"
+#include "../include/Kdtree.hpp"
+#include "../include/main.hpp"
 
 using namespace Raytracer;
 using glm::vec3;
@@ -83,6 +85,14 @@ void Raytracer::draw(CL_Manager &manager, Scene_Manager &scene, cl_kernel &kerne
     cl_int width = SCREEN_WIDTH;
     cl_int height = SCREEN_HEIGHT;
     cl_float4 *output = new cl_float4[width*height];
+
+    /* kd-tree construction, array-ifying */
+    KD_Tree *tree = new KD_Tree(scene.triangles);
+    vector<struct triangle> triangles;
+    vector<struct kdnode> tree_flat;
+    array_ify(tree, tree_flat, triangles);
+    delete tree;
+    // TODO: sent triangles and tree_flat as parameters, with their lengths
 
     /* kernel parameters */
     manager.checkError(
