@@ -3,6 +3,10 @@ project (raytracer)
 
 add_executable(main
                src/main.cpp
+               src/BBox.cpp
+               src/Kdtree.cpp
+               src/KdArray.cpp
+               src/Triangle.cpp
                src/cl_manager.cpp
                src/scene_manager.cpp)
 

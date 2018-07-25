@@ -1,6 +1,7 @@
 #include "../include/BBox.hpp"
 #include "../include/structs.hpp"
 
+namespace Raytracer {
 int BBox::quantize(float ind) {
     if(ind < EPSILON && ind > -EPSILON)
         return 0;
@@ -75,4 +76,5 @@ int BBox::longestaxis(){
         return 2;
     }
     return -1;
+}
 }

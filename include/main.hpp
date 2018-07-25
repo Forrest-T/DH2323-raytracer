@@ -39,7 +39,7 @@ namespace Raytracer {
     int t;
 
     void update();
-    void draw(CL_Manager&, Scene_Manager&, cl_kernel&, cl_mem&, cl_mem&);
+    void draw(CL_Manager&, Scene_Manager&, cl_kernel&, cl_mem&);
 
     inline glm::vec3 float4_to_vec3(cl_float4 &f) {
         return glm::vec3(f.s[0], f.s[1], f.s[2]);
