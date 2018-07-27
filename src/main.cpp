@@ -19,7 +19,6 @@ int main() {
     Scene_Manager scene;
     scene.log_level = VERBOSE;
     scene.loadBox();
-    //scene.initialize("models/dragon_vrip_res4.ply");
 
     CL_Manager manager;
     manager.log_level = VERBOSE;
@@ -37,6 +36,7 @@ int main() {
     cl_mem outBuf = clCreateBuffer(manager.context, CL_MEM_WRITE_ONLY, sizeof(cl_float4)*SCREEN_WIDTH*SCREEN_HEIGHT, NULL, NULL);
 
     t = SDL_GetTicks();
+    printf("starting even loop\n");
     while (NoQuitMessageSDL()) {
         update();
         draw(manager, scene, kernel, outBuf);
@@ -50,6 +50,7 @@ int main() {
 }
 
 void Raytracer::update() {
+    printf("updating\n");
     int t2 = SDL_GetTicks();
     float dt = float(t2-t);
     t = t2;
@@ -86,9 +87,11 @@ void Raytracer::draw(CL_Manager &manager, Scene_Manager &scene, cl_kernel &kerne
     cl_float4 *output = new cl_float4[width*height];
 
     /* kd-tree construction, array-ifying */
+    printf("creating tree\n");
     KD_Tree *tree = new KD_Tree(scene.triangles);
     vector<struct triangle> triangles;
     vector<struct kdnode> tree_flat;
+    printf("array-ifying tree\n");
     array_ify(tree, tree_flat, triangles);
     delete tree;
     // TODO: send triangles and tree_flat as parameters, with their lengths
@@ -131,6 +134,7 @@ void Raytracer::draw(CL_Manager &manager, Scene_Manager &scene, cl_kernel &kerne
     manager.checkError(error, "failed to set kernel arguments\n");
     size_t global_size = width*height;
 
+    printf("setting kernel\n");
     manager.checkError(
             clEnqueueNDRangeKernel(
                 manager.queue, kernel, 1, NULL, &global_size,
