@@ -129,7 +129,7 @@ float4 calculateColor(__global struct kdnode *tree,
     if (dot(norm,light) < 0) norm *= -1;
     float dist = length(light);
     Intersection i2 = { .triangle = NULL, .distance = dist};
-    Ray r = {i->position + FLT_EPSILON * light, normalize(light)};
+    Ray r = {i->position + 0.001f * light, normalize(light)};
     treeIntersection(tree, &i2, &r, triangles, i->triangle);
     if (dot(cam,norm) < 0 || i2.distance < dist)
         light = black;
