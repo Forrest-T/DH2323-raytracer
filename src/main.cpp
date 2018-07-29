@@ -42,7 +42,7 @@ int main() {
         draw(manager, scene, kernel, outBuf);
     }
 
-    //SDL_SaveBMP(screen, "screenshot.bmp");
+    SDL_SaveBMP(screen, "screenshot.bmp");
     clReleaseMemObject(outBuf);
     clReleaseKernel(kernel);
     clReleaseProgram(program);
@@ -112,10 +112,10 @@ void Raytracer::draw(CL_Manager &manager, Scene_Manager &scene, cl_kernel &kerne
             "failed to write to buffer\n");
     manager.checkError(
             clEnqueueWriteBuffer(
-                manager.queue, triangleBuf, CL_TRUE, 0,
+                manager.queue, treeBuf, CL_TRUE, 0,
                 sizeof(struct kdnode)*tree_flat.size(), &tree_flat[0], 0, NULL, NULL),
             "failed to write to buffer\n");
-    cl_int num_triangles = scene.triangles.size();
+    cl_int num_triangles = triangles.size();
     Light light = {light_pos, light_col, light_glb};
     // camera already defined
     cl_int clfocal = focal;
