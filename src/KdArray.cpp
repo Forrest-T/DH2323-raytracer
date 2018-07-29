@@ -39,12 +39,13 @@ namespace Raytracer {
                          vec3_to_float4(node->bounding_box.max)};
             inner.num_triangles = 0;
             inner.triangle_begin = 0;
+            int temp = index;
             index++;
-            inner.left_index = index;
-            array_ify(index, node->leftchild, tree_flat, triangles);
-            inner.right_index = index;
-            array_ify(index, node->rightchild, tree_flat, triangles);
             tree_flat.push_back(inner);
+            tree_flat[temp].left_index = index;
+            array_ify(index, node->leftchild, tree_flat, triangles);
+            tree_flat[temp].right_index = index;
+            array_ify(index, node->rightchild, tree_flat, triangles);
         }
     }
 }
