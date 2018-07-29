@@ -1,26 +1,10 @@
-typedef enum state {
-    DEFAULT,
-    CHECK_LEFT,
-    CHECK_RIGHT,
-    RETURN_LEFT,
-    RETURN_RIGHT
-} State;
-typedef struct {
-    Intersection temp;
-    Intersection left;
-    Intersection right;
-    int node;
-    State state;
-    bool leftFlag;
-    bool rightFlag;
-} stackFrame;
-
-bool bboxIntersection(Ray *r, __global BBox *b);
-bool calculateIntersection(Intersection *i, Ray *r, __global Triangle *t, __global Triangle  *skip);
-void treeIntersection(__global struct kdnode *tree, Intersection *i, Ray *r, __global Triangle *t, __global Triangle *skip);
-float4 calculateColor(__global struct kdnode *tree, Intersection *i, Light *l, float4 cam, __global Triangle *triangles, int num_triangles);
-
 constant float4 black = (float4)(0,0,0,0);
+
+void swap(__private float *, __private float *);
+bool bboxIntersection(Ray *, BBox *, Intersection *);
+bool calculateIntersection(Intersection *, Ray *, __global Triangle *, __global Triangle  *);
+void treeIntersection(__global struct kdnode *, Intersection *, Ray *, __global Triangle *, __global Triangle *);
+float4 calculateColor(__global struct kdnode *, Intersection *, Light *, float4, __global Triangle *, int);
 
 void swap(__private float *a, __private float *b) {
     float c = *a;
@@ -28,7 +12,7 @@ void swap(__private float *a, __private float *b) {
     *b = c;
 }
 
-bool bboxIntersection(Ray *r, __global BBox *b) {
+bool bboxIntersection(Ray *r, BBox *b, Intersection *i) {
     float hit1, hit2;
     float txmax, txmin, tymax, tymin, tzmax, tzmin;
     float invx = 1/(r->direction.x),
@@ -66,10 +50,14 @@ bool bboxIntersection(Ray *r, __global BBox *b) {
     hit1 = fmax(hit1, tzmin);
     hit2 = fmin(hit2, tzmax);
 
-    if (hit2 > 0.f)
-        hit1 = fmax(hit1,0.f);
+    if (hit2 <= 0.f)
+        return false;
+    hit1 = fmax(hit1,0.f);
+    
+    i->position = r->origin + r->direction*hit1;
+    i->distance = hit1;
 
-    return (hit1 >= 0.f);
+    return true;
 }
 
 void treeIntersection(__global struct kdnode *tree,
@@ -77,84 +65,28 @@ void treeIntersection(__global struct kdnode *tree,
                       Ray *r,
                       __global Triangle *t,
                       __global Triangle *skip) {
-    // TODO calculate tree depth at runtime?
-    stackFrame stack[100];
-    stack[0].node = 0;
-    stack[0].state = DEFAULT;
-    int stackptr = 0;
+    struct kdnode stack[100];
+    struct kdnode *stackptr = stack;
+    stackptr++;
+    *stackptr = tree[0];
     do {
-    if (       stack[stackptr].state == DEFAULT 
-            || stack[stackptr-1].state == CHECK_LEFT
-            || stack[stackptr-1].state == CHECK_RIGHT) {
-        stack[stackptr].temp.distance = FLT_MAX;
-        if (tree[stack[stackptr].node].num_triangles > 0) { // leaf node
-            for (int ti = 0; ti < tree[stack[stackptr].node].num_triangles; ti++)
-                if (calculateIntersection(&(stack[stackptr].temp), r, &(t[ti+tree[stack[stackptr].node].triangle_begin]), skip)) {
-                    if (stack[stackptr].state == DEFAULT) {
-                        if (stack[stackptr].temp.distance < i->distance)
-                            *i = stack[stackptr].temp;
-                    } else if ( stack[stackptr-1].state == CHECK_LEFT && stack[stackptr].temp.distance < stack[stackptr-1].left.distance) {
-                                stack[stackptr-1].left = stack[stackptr].temp;
-                                stack[stackptr-1].leftFlag = true;
-                                stack[stackptr-1].state = RETURN_LEFT;
-                    } else if ( stack[stackptr-1].state == CHECK_RIGHT && stack[stackptr].temp.distance < stack[stackptr-1].right.distance) {
-                                stack[stackptr-1].right = stack[stackptr].temp;
-                                stack[stackptr-1].rightFlag = true;
-                                stack[stackptr-1].state = RETURN_RIGHT;
-                    }
-                }
+        if (stackptr->num_triangles > 0) {
+            for (int ti = 0; ti < stackptr->num_triangles; ti++)
+                calculateIntersection(i, r, t+stackptr->triangle_begin+ti, skip);
             stackptr--;
-        } else { // intermediate node
-            if (stackptr == 0)
-                stack[stackptr].left = *i;
-            else if (stack[stackptr-1].state == CHECK_LEFT)
-                stack[stackptr].left = stack[stackptr-1].left;
-            else
-                stack[stackptr].left = stack[stackptr-1].right;
-            stack[stackptr].leftFlag = false;
-            if (bboxIntersection(r, &(tree[stack[stackptr].node].box))) {
-                // "recursive" call to the left child
-                stack[stackptr].state = CHECK_LEFT;
-                stackptr++;
-                stack[stackptr].node = tree[stack[stackptr-1].node].left_index;
-            } else {
-                stack[stackptr].state = RETURN_LEFT;
-            }
-        }
-    } else if (stack[stackptr].state == RETURN_LEFT) {
-            if (stackptr == 0)
-                stack[stackptr].right = *i;
-            else if (stack[stackptr-1].state == CHECK_LEFT)
-                stack[stackptr].right = stack[stackptr-1].left;
-            else
-                stack[stackptr].right = stack[stackptr-1].right;
-        stack[stackptr].rightFlag = false;
-        if (bboxIntersection(r, &(tree[stack[stackptr].node].box))) {
-            // "recursive" call to the right child
-            stack[stackptr].state = CHECK_RIGHT;
-            stackptr++;
-            stack[stackptr].node = tree[stack[stackptr-1].node].left_index;
         } else {
-            stack[stackptr].state = RETURN_RIGHT;
+            bool lf, rf;
+            Intersection li = { NULL, (float4)(0,0,0,0), FLT_MAX };
+            Intersection ri = { NULL, (float4)(0,0,0,0), FLT_MAX };
+            struct kdnode left = tree[stackptr->left_index];
+            struct kdnode right = tree[stackptr->right_index];
+            lf = bboxIntersection(r,&left.box,&li) && li.distance < i->distance;
+            rf = bboxIntersection(r,&right.box,&ri) && ri.distance < i->distance;
+            stackptr--;
+            if (lf) *(++stackptr) = left;
+            if (rf) *(++stackptr) = right;
         }
-    } else if (stack[stackptr].state == RETURN_RIGHT) {
-        Intersection *intersection;
-        if (stackptr == 0)
-            intersection = i;
-        else if (stack[stackptr-1].state == CHECK_LEFT)
-            intersection = &(stack[stackptr-1].left);
-        else
-            intersection = &(stack[stackptr-1].right);
-        if (!stack[stackptr].leftFlag && stack[stackptr].rightFlag)
-            *intersection = stack[stackptr].right;
-        else if (!stack[stackptr].rightFlag && stack[stackptr].leftFlag)
-            *intersection = stack[stackptr].left;
-        else if (stack[stackptr].rightFlag && stack[stackptr].leftFlag)
-            *intersection = stack[stackptr].left.distance < stack[stackptr].right.distance ?
-                stack[stackptr].left : stack[stackptr].right;
-        stackptr--;
-    }
-    } while (stackptr >= 0);
+    } while (stackptr != stack);
 }
 
 bool calculateIntersection(Intersection *i,
@@ -198,8 +130,7 @@ float4 calculateColor(__global struct kdnode *tree,
     float dist = length(light);
     Intersection i2 = { .triangle = NULL, .distance = dist};
     Ray r = {i->position + FLT_EPSILON * light, normalize(light)};
-    for (int j = 0; j < num_triangles; j++)
-        treeIntersection(tree, &i2, &r, &triangles[j], i->triangle);
+    treeIntersection(tree, &i2, &r, triangles, i->triangle);
     if (dot(cam,norm) < 0 || i2.distance < dist)
         light = black;
     else
@@ -222,7 +153,6 @@ __kernel void tracePixel(__global struct kdnode* flat_tree,
     Intersection i = { .triangle = NULL, .distance = FLT_MAX };
     Ray r = {camera, (float4)(x-width/2,y-width/2,focal,0)};
     r.direction = normalize(r.direction);
-    for (int j = 0; j < num_triangles; j++)
-        treeIntersection(flat_tree, &i, &r, &triangles[j], NULL);
+    treeIntersection(flat_tree, &i, &r, triangles, NULL);
     out[x+y*width] = calculateColor(flat_tree, &i, &light, camera, triangles, num_triangles);
 }
