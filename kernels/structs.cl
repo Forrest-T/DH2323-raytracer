@@ -22,8 +22,8 @@ typedef struct light {
 } Light;
 
 typedef struct intersection {
-    float4 position;
     __global Triangle *triangle;
+    float4 position;
     float distance;
 } Intersection;
 
