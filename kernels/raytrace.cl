@@ -152,6 +152,7 @@ __kernel void tracePixel(__global struct kdnode* flat_tree,
     int y = id / width;
     Intersection i = { .triangle = NULL, .distance = FLT_MAX };
     Ray r = {camera, (float4)(x-width/2,y-width/2,focal,0)};
+    r.direction = mat4VMult2(r.direction,R);
     r.direction = normalize(r.direction);
     treeIntersection(flat_tree, &i, &r, triangles, NULL);
     out[x+y*width] = calculateColor(flat_tree, &i, &light, camera, triangles, num_triangles);

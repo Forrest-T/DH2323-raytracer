@@ -25,7 +25,7 @@ namespace Raytracer {
     const int focal = 375;//SCREEN_HEIGHT/2*(-1-camera.s[3]);
     const float camera_speed = 0.002;
     float yaw = 0.f;
-    float yaw_speed = 0.15;
+    float yaw_speed = 0.003;
 
     /* Color and lighting variables */
     cl_float4 light_pos {{0,0,-.7,0}};

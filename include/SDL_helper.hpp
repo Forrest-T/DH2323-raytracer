@@ -28,6 +28,8 @@ SDL_Surface* InitializeSDL(int width, int height, bool fullscreen) {
         std::cout << "Could not set video mode: " << SDL_GetError() << std::endl;
         exit(1);
     }
+    SDL_WM_GrabInput(SDL_GRAB_ON);
+    SDL_ShowCursor(0);
     return surface;
 }
 
