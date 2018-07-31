@@ -23,9 +23,11 @@ namespace Raytracer {
     cl_float4 camera {{0,0,-2.5,0}};
     cl_float16 R;
     const int focal = 375;//SCREEN_HEIGHT/2*(-1-camera.s[3]);
-    const float camera_speed = 0.002;
+    const float camera_speed = 0.002f;
     float yaw = 0.f;
-    float yaw_speed = 0.15;
+    float yaw_speed = 0.003f;
+    float pitch = 0.f;
+    float pitch_speed = 0.003f;
 
     /* Color and lighting variables */
     cl_float4 light_pos {{0,0,-.7,0}};

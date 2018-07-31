@@ -61,9 +61,9 @@ __kernel void tracePixel(__global Triangle *triangles,
     int y = id / width;
     Intersection i = { .triangle = NULL, .distance = FLT_MAX };
     Ray r = {camera, (float4)(x-width/2,y-width/2,focal,0)};
-    r.direction = normalize(r.direction);
     //r.direction = mat4VMult(R,r.direction);
-    //r.direction = mat4VMult2(r.direction,R);
+    r.direction = mat4VMult2(r.direction,R);
+    r.direction = normalize(r.direction);
     for (int j = 0; j < num_triangles; j++)
         calculateIntersection(&i, &r, &triangles[j], NULL);
     out[x+y*width] = calculateColor(&i, &light, camera, triangles, num_triangles);

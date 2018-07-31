@@ -54,6 +54,18 @@ void Raytracer::update() {
     float dt = float(t2-t);
     t = t2;
     printf("Render time: %f ms\n",dt);
+
+    int x, y;
+    SDL_GetMouseState(&x, &y);
+    x -= SCREEN_WIDTH/2;
+    y -= SCREEN_HEIGHT/2;
+    yaw += yaw_speed*x;
+    R = {{1.f,0.f,0.f,0.f,0.f,1.f,0.f,0.f,0.f,0.f,1.f,0.f,0.f,0.f,0.f,1.f}};
+    R.s[0] = R.s[10] = cos(yaw);
+    R.s[2] = -(R.s[8] = sin(yaw));
+    // TODO: pitch
+    SDL_WarpMouse(SCREEN_WIDTH/2, SCREEN_HEIGHT/2);
+    // camera movement
     Uint8 *keystate = SDL_GetKeyState(0);
     if (keystate[SDLK_UP])
         light_pos.s[2] += light_speed*dt;
@@ -75,8 +87,6 @@ void Raytracer::update() {
         camera.s[1] -= camera_speed*dt;
     if (keystate[SDLK_LSHIFT])
         camera.s[1] += camera_speed*dt;
-    // TODO: calculate rotation matrix R
-    R = {{1.f,0.f,0.f,0.f,0.f,1.f,0.f,0.f,0.f,0.f,1.f,0.f,0.f,0.f,0.f,1.f}};
 }
 
 void Raytracer::draw(CL_Manager &manager, Scene_Manager &scene, cl_kernel &kernel, cl_mem &triangleBuf, cl_mem &outBuf) {
