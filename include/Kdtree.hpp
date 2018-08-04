@@ -28,9 +28,8 @@ public:
 
 class KD_Tree {
 public:
-    static const int MAX_DEPTH = 100;
+    static const int MAX_DEPTH = 10;
     KD_Node *root;
-    // TODO: minimum splitting split cutoff
 
     KD_Tree(vector<Triangle> &trg) { 
         vector<Triangle*> tps(trg.size());
