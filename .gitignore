@@ -48,3 +48,4 @@ Makefile
 cmake_install.cmake
 tags
 old_versions/raytracing-kd/.ycm_extra_conf.py
+models/dragon-*
