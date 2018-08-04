@@ -1,5 +1,6 @@
 #include <iostream>
 #include <fstream>
+#include <string>
 #include <vector>
 #include <cmath>
 
@@ -51,6 +52,35 @@ namespace Raytracer {
         LoadTestModel(box);
         for (const auto &t : box)
             triangles.push_back(Triangle(t.v0, t.v1, t.v2, t.color));
+    }
+
+    void Scene_Manager::loadModel(std::string filepath) {
+        FILE *stream = fopen(filepath.c_str(),"r");
+        char *line = NULL;
+        size_t len = 0;
+        ssize_t nread;
+
+        vec3 v0, v1, v2, col;
+        while ((nread = getline(&line, &len, stream)) != -1) {
+            sscanf(line, "%f %f %f %f %f %f %f %f %f %f %f %f",
+                   &v0.x, &v0.y, &v0.z, &v1.x, &v1.y, &v1.z,
+                   &v2.x, &v2.y, &v2.z, &col.x, &col.y, &col.z);
+            triangles.push_back(Triangle(v0, v1, v2, col));
+        }
+        float miny = triangles[0].v0.y, maxy = miny;
+        for (const auto &t : triangles) {
+            if (t.v0.y < miny) miny = t.v0.y;
+            if (t.v1.y < miny) miny = t.v1.y;
+            if (t.v2.y < miny) miny = t.v2.y;
+            if (t.v0.y > maxy) maxy = t.v0.y;
+            if (t.v1.y > maxy) maxy = t.v1.y;
+            if (t.v2.y > maxy) maxy = t.v2.y;
+        }
+        printf("max y: %f\n",maxy);
+        printf("min y: %f\n",miny);
+        free(line);
+        fclose(stream);
+
     }
 
     Scene_Manager::~Scene_Manager() { }

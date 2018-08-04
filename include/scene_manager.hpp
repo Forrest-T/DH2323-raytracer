@@ -5,6 +5,7 @@
 #include "structs.hpp"
 #include "Triangle.hpp"
 #include <vector>
+#include <string>
 
 namespace Raytracer {
     class Scene_Manager {
@@ -14,6 +15,7 @@ namespace Raytracer {
 
         void initialize(std::string);
         void loadBox();
+        void loadModel(std::string);
         ~Scene_Manager();
     private:
         cl_float4 normal(cl_float4 a, cl_float4 b, cl_float4 c);

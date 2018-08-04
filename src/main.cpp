@@ -18,7 +18,8 @@ int main() {
 
     Scene_Manager scene;
     scene.log_level = VERBOSE;
-    scene.loadBox();
+    //scene.loadBox();
+    scene.loadModel("models/dragon-smallest");
 
     CL_Manager manager;
     manager.log_level = VERBOSE;
