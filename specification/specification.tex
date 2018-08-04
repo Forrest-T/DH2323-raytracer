@@ -1,6 +1,7 @@
 \documentclass{article}
 \usepackage[margin=1in]{geometry}
 \usepackage[utf8]{inputenc}
+\usepackage{color}
 \usepackage{tabu}
 \title{DH 2323 - Project Specification (for A grade)}
 \author{Forrest Timour, Poorya Ghavamian}
@@ -35,15 +36,15 @@ We have created a list of optimizations that we will consider applying:
 Because we plan to build up this project iteratively, we will compare the preprocessing and rendering times to previous instances of the project, for example both before and after utilizing KD-trees for preprocessing. This data will be gathered on multiple computing environments and compared in order to avoid bias from any particular system configuration, and then compared to the expected improvements found in the literature.
 
 \section*{Risks \& Priorities}
-\begin{center}\begin{tabu}{|c|c|c|}\everyrow{\hline}\hline
-Task&Priority&Risk\\
-Loading in Test Model&1&None\\
-Naïve GPU Raytracer&2&Highest\\
-Construct KD-Tree&3&Low\\
-Integrate KD-Tree into Raytracer&4&High\\
-Optimize KD-Tree Construction&5&Moderate\\
-Ray-Triangle precalculation optimimzation&Low&Low\\
-More Graphical Primitives&Low&None\\
+\begin{center}\begin{tabu}{|c|c|c|c|}\everyrow{\hline}\hline
+Task&Priority&Risk&Status\\
+Loading in Test Model&1&None&\color{blue}completed\\
+Naïve GPU Raytracer&2&Highest&\color{blue}completed\\
+Construct KD-Tree&3&Low&\color{blue}completed\\
+Integrate KD-Tree into Raytracer&4&High&\color{blue}completed\\
+Optimize KD-Tree Construction&5&Moderate&\color{red}todo\\
+Ray-Triangle precalculation optimimzation&Low&Low&\color{red}todo\\
+More Graphical Primitives&Low&None&\color{red}todo\\
 \end{tabu}\end{center}
 
 * ``Low'' priority tasks are things that we will implement only if we have ample extra time, and will not prioritize.
