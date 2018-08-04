@@ -16,8 +16,8 @@ int main() {
 
     Scene_Manager scene;
     scene.log_level = VERBOSE;
-    scene.loadBox();
-    //scene.initialize("models/dragon_vrip_res4.ply");
+    //scene.loadBox();
+    scene.loadModel("../../models/out");
 
     CL_Manager manager;
     manager.log_level = VERBOSE;
@@ -37,11 +37,14 @@ int main() {
     cl_mem outBuf = clCreateBuffer(manager.context, CL_MEM_WRITE_ONLY, sizeof(cl_float4)*SCREEN_WIDTH*SCREEN_HEIGHT, NULL, NULL);
 
     t = SDL_GetTicks();
-    while (NoQuitMessageSDL()) {
-        update();
-        draw(manager, scene, kernel, triangleBuf, outBuf);
-    }
-//    draw(manager, scene, kernel);
+    SDL_WarpMouse(SCREEN_WIDTH/2, SCREEN_HEIGHT/2);
+    //while (NoQuitMessageSDL()) {
+    //    update();
+    //    draw(manager, scene, kernel, triangleBuf, outBuf);
+    //}
+    update();
+    draw(manager, scene, kernel, triangleBuf, outBuf);
+    update();
 
     SDL_SaveBMP(screen, "screenshot.bmp");
     clReleaseKernel(kernel);

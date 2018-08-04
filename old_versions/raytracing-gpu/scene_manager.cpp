@@ -14,66 +14,6 @@ using std::cout;
 using std::endl;
 
 namespace Raytracer {
-    void Scene_Manager::initialize(string filepath) {
-        ifstream file(filepath);
-        if (!file.good()) {
-            cerr << "Unable to read file: " << filepath << endl;
-            exit(EXIT_FAILURE);
-        }
-        char line[256];
-        file.getline(line, sizeof(line));
-        if (!strncmp(line, "ply", 3)) {
-            if (log_level == VERBOSE)
-                cout << "detected Dragon file" << endl;
-            readDragon(file);
-        } else {
-            if (log_level != SILENT)
-                cerr << "scene input file format not recognized" << endl;
-            exit(EXIT_FAILURE);
-        }
-    }
-
-    void Scene_Manager::readDragon(ifstream &file) {
-        int num_vert;
-        int num_face;
-        char line[256];
-        char *tok;
-        do file.getline(line, sizeof(line)); while (strncmp("element",line,7));
-        tok = strtok(line," ");
-        tok = strtok(NULL," ");
-        tok = strtok(NULL," ");
-        sscanf(tok,"%d",&num_vert);
-        do file.getline(line, sizeof(line)); while (strncmp("element",line,7));
-        tok = strtok(line," ");
-        tok = strtok(NULL," ");
-        tok = strtok(NULL," ");
-        sscanf(tok,"%d",&num_face);
-        cout << "vertices: " << num_vert << endl;
-        cout << "faces: " << num_face << endl;
-        do file.getline(line, sizeof(line)); while (strncmp("end_header",line,10));
-        vector<cl_float4> vertices(num_vert);
-        float a, b, c, d=0;
-        for (int i = 0; i < num_vert; i++) {
-            file.getline(line,sizeof(line));
-            sscanf(strtok(line," "),"%f",&a);
-            sscanf(strtok(NULL," "),"%f",&b);
-            sscanf(strtok(NULL," "),"%f",&c);
-            vertices[i] = (cl_float4){{a, b, c, d}};
-        }
-        int x, y, z;
-        triangles.reserve(num_face);
-        for (int i = 0; i < num_face; i++) {
-            file.getline(line,sizeof(line));
-            strtok(line," ");
-            sscanf(strtok(NULL," "),"%d",&x);
-            sscanf(strtok(NULL," "),"%d",&y);
-            sscanf(strtok(NULL," "),"%d",&z);
-            triangles.push_back({vertices[x], vertices[y], vertices[z],
-                                 normal(vertices[x], vertices[y], vertices[z]),
-                                 {{1,1,1,0}}});
-        }
-    }
-
     cl_float4 Scene_Manager::normal(cl_float4 a, cl_float4 b, cl_float4 c) {
         cl_float4 e1 = {{b.s[0]-a.s[0],b.s[1]-a.s[1],b.s[2]-a.s[2],0}};
         cl_float4 e2 = {{c.s[0]-a.s[0],c.s[1]-a.s[1],c.s[2]-a.s[2],0}};
@@ -102,6 +42,29 @@ namespace Raytracer {
                                  {{t.v2.x,t.v2.y,t.v2.z,0}},
                                  {{t.normal.x,t.normal.y,t.normal.z,0}},
                                  {{t.color.x,t.color.y,t.color.z,0}}});
+    }
+
+    void Scene_Manager::loadModel(std::string filepath) {
+        FILE *stream = fopen(filepath.c_str(),"r");
+        char *line = NULL;
+        size_t len = 0;
+        ssize_t nread;
+
+        vec3 v0, v1, v2, col, norm;
+        while ((nread = getline(&line, &len, stream)) != -1) {
+            sscanf(line, "%f %f %f %f %f %f %f %f %f %f %f %f",
+                   &v0.x, &v0.y, &v0.z, &v1.x, &v1.y, &v1.z,
+                   &v2.x, &v2.y, &v2.z, &col.x, &col.y, &col.z);
+            norm = computeNormal(v0, v1, v2);
+            triangles.push_back({vec3_to_float4(v0),
+                                 vec3_to_float4(v1),
+                                 vec3_to_float4(v2),
+                                 vec3_to_float4(norm),
+                                 vec3_to_float4(col)});
+        }
+        free(line);
+        fclose(stream);
+
     }
 
     Scene_Manager::~Scene_Manager() { }
