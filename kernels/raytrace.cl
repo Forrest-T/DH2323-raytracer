@@ -1,10 +1,10 @@
 constant float4 black = (float4)(0,0,0,0);
 
 void swap(__private float *, __private float *);
-bool bboxIntersection(Ray *, BBox *, Intersection *);
-bool calculateIntersection(Intersection *, Ray *, __global Triangle *, __global Triangle  *);
-void treeIntersection(__global struct kdnode *, Intersection *, Ray *, __global Triangle *, __global Triangle *);
-float4 calculateColor(__global struct kdnode *, Intersection *, Light *, float4, __global Triangle *, int);
+bool bboxIntersection(__private Ray *, __private BBox *, __private Intersection *);
+bool calculateIntersection(__private Intersection *, __private Ray *, __global Triangle *, __global Triangle  *);
+void treeIntersection(__global struct kdnode *, __private Intersection *, __private Ray *, __global Triangle *, __global Triangle *);
+float4 calculateColor(__global struct kdnode *, __private Intersection *, __private Light *, float4, __global Triangle *);
 
 void swap(__private float *a, __private float *b) {
     float c = *a;
@@ -12,7 +12,7 @@ void swap(__private float *a, __private float *b) {
     *b = c;
 }
 
-bool bboxIntersection(Ray *r, BBox *b, Intersection *i) {
+bool bboxIntersection(__private Ray *r, __private BBox *b, __private Intersection *i) {
     float hit1, hit2;
     float txmax, txmin, tymax, tymin, tzmax, tzmin;
     float invx = 1/(r->direction.x),
@@ -47,12 +47,10 @@ bool bboxIntersection(Ray *r, BBox *b, Intersection *i) {
     if (tzmax < hit1 - FLT_EPSILON || tzmin > hit2 + FLT_EPSILON)
         return false; //ray misses cube in z dimension
 
-    hit1 = fmax(hit1, tzmin);
+    hit1 = fmax(fmax(hit1, tzmin), 0.f);
     hit2 = fmin(hit2, tzmax);
-
-    if (hit2 <= 0.f)
+    if (hit1 > i->distance)
         return false;
-    hit1 = fmax(hit1,0.f);
     
     i->position = r->origin + r->direction*hit1;
     i->distance = hit1;
@@ -61,8 +59,8 @@ bool bboxIntersection(Ray *r, BBox *b, Intersection *i) {
 }
 
 void treeIntersection(__global struct kdnode *tree,
-                      Intersection *i,
-                      Ray *r,
+                      __private Intersection *i,
+                      __private Ray *r,
                       __global Triangle *t,
                       __global Triangle *skip) {
     struct kdnode stack[100];
@@ -72,27 +70,24 @@ void treeIntersection(__global struct kdnode *tree,
     do {
         if (stackptr->num_triangles > 0) {
             for (int ti = 0; ti < stackptr->num_triangles; ti++)
-                calculateIntersection(i, r, t+stackptr->triangle_begin+ti, skip);
+                calculateIntersection(i, r, t+ti+stackptr->triangle_begin, skip);
             stackptr--;
         } else {
-            bool lf, rf;
-            Intersection li = { NULL, (float4)(0,0,0,0), FLT_MAX };
-            Intersection ri = { NULL, (float4)(0,0,0,0), FLT_MAX };
+            Intersection li = { .triangle = NULL, .distance = i->distance };
+            Intersection ri = { .triangle = NULL, .distance = i->distance };
             struct kdnode left = tree[stackptr->left_index];
             struct kdnode right = tree[stackptr->right_index];
-            lf = bboxIntersection(r,&left.box,&li) && li.distance < i->distance;
-            rf = bboxIntersection(r,&right.box,&ri) && ri.distance < i->distance;
             stackptr--;
-            if (lf) *(++stackptr) = left;
-            if (rf) *(++stackptr) = right;
+            if (bboxIntersection(r,&right.box,&ri)) *(++stackptr) = right;
+            if (bboxIntersection(r,&left.box,&li))  *(++stackptr) = left;
         }
     } while (stackptr != stack);
 }
 
-bool calculateIntersection(Intersection *i,
-                            Ray *r,
-                            __global Triangle *t,
-                            __global Triangle  *skip) {
+bool calculateIntersection(__private Intersection *i,
+                           __private Ray *r,
+                           __global Triangle *t,
+                           __global Triangle  *skip) {
     if (t == skip) return false;
     /* Muller-Trömbore algorithm */
     float u, v, time;
@@ -117,12 +112,11 @@ bool calculateIntersection(Intersection *i,
 }
 
 float4 calculateColor(__global struct kdnode *tree,
-                      Intersection *i,
-                      Light *l,
+                      __private Intersection *i,
+                      __private Light *l,
                       float4 cam,
-                      __global Triangle *triangles,
-                      int num_triangles) {
-    if (i->triangle == NULL) return black;
+                      __global Triangle *triangles) {
+    if (i->triangle == NULL) return (float4)(0,0,.3,0);
     cam -= i->position;
     float4 norm = i->triangle->normal;
     float4 light = l->position - i->position;
@@ -140,20 +134,18 @@ float4 calculateColor(__global struct kdnode *tree,
 
 __kernel void tracePixel(__global struct kdnode* flat_tree,
                          __global Triangle *triangles,
-                         int num_triangles,
                          Light light,
                          float4 camera,
                          int focal,
                          mat4 R,
                          int width,
-                        global float4 *out) {
+                         __global float4 *out) {
     int id = get_global_id(0);
     int x = id % width;
     int y = id / width;
     Intersection i = { .triangle = NULL, .distance = FLT_MAX };
     Ray r = {camera, (float4)(x-width/2,y-width/2,focal,0)};
-    r.direction = mat4VMult2(r.direction,R);
-    r.direction = normalize(r.direction);
+    r.direction = normalize(mat4VMult2(r.direction,R));
     treeIntersection(flat_tree, &i, &r, triangles, NULL);
-    out[x+y*width] = calculateColor(flat_tree, &i, &light, camera, triangles, num_triangles);
+    out[x+y*width] = calculateColor(flat_tree, &i, &light, camera, triangles);
 }

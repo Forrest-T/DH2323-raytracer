@@ -19,7 +19,7 @@ int main() {
     Scene_Manager scene;
     scene.log_level = VERBOSE;
     //scene.loadBox();
-    scene.loadModel("models/dragon-smallest");
+    scene.loadModel("models/out");
 
     CL_Manager manager;
     manager.log_level = VERBOSE;
@@ -37,10 +37,14 @@ int main() {
     cl_mem outBuf = clCreateBuffer(manager.context, CL_MEM_WRITE_ONLY, sizeof(cl_float4)*SCREEN_WIDTH*SCREEN_HEIGHT, NULL, NULL);
 
     t = SDL_GetTicks();
-    while (NoQuitMessageSDL()) {
-        update();
-        draw(manager, scene, kernel, outBuf);
-    }
+    SDL_WarpMouse(SCREEN_WIDTH/2, SCREEN_HEIGHT/2);
+    //while (NoQuitMessageSDL()) {
+    //    update();
+    //    draw(manager, scene, kernel, outBuf);
+    //}
+    update();
+    draw(manager, scene, kernel, outBuf);
+    update();
 
     SDL_SaveBMP(screen, "screenshot.bmp");
     clReleaseMemObject(outBuf);
@@ -55,14 +59,14 @@ void Raytracer::update() {
     t = t2;
     printf("Render time: %f ms\n",dt);
 
-    int x;
-    SDL_GetMouseState(&x, NULL);
-    x -= SCREEN_WIDTH/2;
-    yaw += yaw_speed*x;
+    //int x;
+    //SDL_GetMouseState(&x, NULL);
+    //x -= SCREEN_WIDTH/2;
+    //yaw += yaw_speed*x;
     R = {{1.f,0.f,0.f,0.f,0.f,1.f,0.f,0.f,0.f,0.f,1.f,0.f,0.f,0.f,0.f,1.f}};
-    R.s[0] = R.s[10] = cos(yaw);
-    R.s[2] = -(R.s[8] = sin(yaw));
-    SDL_WarpMouse(SCREEN_WIDTH/2, SCREEN_HEIGHT/2);
+    //R.s[0] = R.s[10] = cos(yaw);
+    //R.s[2] = -(R.s[8] = sin(yaw));
+    //SDL_WarpMouse(SCREEN_WIDTH/2, SCREEN_HEIGHT/2);
 
     Uint8 *keystate = SDL_GetKeyState(0);
     if (keystate[SDLK_UP])
@@ -99,7 +103,6 @@ void Raytracer::draw(CL_Manager &manager, Scene_Manager &scene, cl_kernel &kerne
     vector<struct kdnode> tree_flat;
     array_ify(tree, tree_flat, triangles);
     delete tree;
-    // TODO: send triangles and tree_flat as parameters, with their lengths
     cl_mem triangleBuf = clCreateBuffer(manager.context,
                                         CL_MEM_READ_ONLY,
                                         sizeof(Triangle)*triangles.size(),
@@ -120,7 +123,6 @@ void Raytracer::draw(CL_Manager &manager, Scene_Manager &scene, cl_kernel &kerne
                 manager.queue, treeBuf, CL_TRUE, 0,
                 sizeof(struct kdnode)*tree_flat.size(), &tree_flat[0], 0, NULL, NULL),
             "failed to write to buffer\n");
-    cl_int num_triangles = triangles.size();
     Light light = {light_pos, light_col, light_glb};
     // camera already defined
     cl_int clfocal = focal;
@@ -129,13 +131,12 @@ void Raytracer::draw(CL_Manager &manager, Scene_Manager &scene, cl_kernel &kerne
 
     error  = clSetKernelArg(kernel, 0, sizeof(cl_mem), &treeBuf);
     error |= clSetKernelArg(kernel, 1, sizeof(cl_mem), &triangleBuf);
-    error |= clSetKernelArg(kernel, 2, sizeof(cl_int), &num_triangles);
-    error |= clSetKernelArg(kernel, 3, sizeof(Light), &light);
-    error |= clSetKernelArg(kernel, 4, sizeof(cl_float4), &camera);
-    error |= clSetKernelArg(kernel, 5, sizeof(cl_int), &clfocal);
-    error |= clSetKernelArg(kernel, 6, sizeof(cl_float16), &R);
-    error |= clSetKernelArg(kernel, 7, sizeof(cl_int), &width);
-    error |= clSetKernelArg(kernel, 8, sizeof(cl_mem), &outBuf);
+    error |= clSetKernelArg(kernel, 2, sizeof(Light), &light);
+    error |= clSetKernelArg(kernel, 3, sizeof(cl_float4), &camera);
+    error |= clSetKernelArg(kernel, 4, sizeof(cl_int), &clfocal);
+    error |= clSetKernelArg(kernel, 5, sizeof(cl_float16), &R);
+    error |= clSetKernelArg(kernel, 6, sizeof(cl_int), &width);
+    error |= clSetKernelArg(kernel, 7, sizeof(cl_mem), &outBuf);
     manager.checkError(error, "failed to set kernel arguments\n");
     size_t global_size = width*height;
 
