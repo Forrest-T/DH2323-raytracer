@@ -18,7 +18,8 @@ using glm::mat3;
 
 int main() {
     screen = InitializeSDL(SCREEN_WIDTH, SCREEN_HEIGHT, false);
-    LoadTestModel(triangles);
+    //LoadTestModel(triangles);
+    loadModel("models/box", triangles);
     t = SDL_GetTicks();    // Set start value for timer.
 
 //    while(NoQuitMessageSDL()) {

@@ -3,10 +3,12 @@
 
 #include <glm/glm.hpp>
 #include <vector>
+#include <string>
 
 #include "Triangle.hpp"
 
 using glm::vec3;
+using std::string;
 
 static struct {vec3 v0; vec3 v1; vec3 v2; vec3 color;} data[30] = {
     {{-1.000000, 1.000000, 1.000000},   {1.000000, 1.000000, -1.000000},   {-1.000000, 1.000000, -1.000000}, {0.150000, 0.750000, 0.150000}},
@@ -45,5 +47,22 @@ void LoadTestModel(std::vector<Triangle>& triangles) {
     triangles = std::vector<Triangle>(30);
     for (int i = 0; i < 30; i++)
         triangles[i] = Triangle(data[i].v0, data[i].v1, data[i].v2, data[i].color);
+}
+
+void loadModel(std::string filepath, std::vector<Triangle> &triangles) {
+    FILE *stream = fopen(filepath.c_str(),"r");
+    char *line = NULL;
+    size_t len = 0;
+    ssize_t nread;
+
+    vec3 v0, v1, v2, col;
+    while ((nread = getline(&line, &len, stream)) != -1) {
+        sscanf(line, "%f %f %f %f %f %f %f %f %f %f %f %f",
+                &v0.x, &v0.y, &v0.z, &v1.x, &v1.y, &v1.z,
+                &v2.x, &v2.y, &v2.z, &col.x, &col.y, &col.z);
+        triangles.push_back(Triangle(v0, v1, v2, col));
+    }
+    free(line);
+    fclose(stream);
 }
 #endif
