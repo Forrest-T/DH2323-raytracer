@@ -27,14 +27,14 @@ public:
 
 class KD_Tree {
 public:
+    static const int MAX_DEPTH = 15;
     KD_Node *root;
-    // TODO: minimum splitting split cutoff
 
     KD_Tree(vector<Triangle> &trg) { 
         vector<Triangle*> tps(trg.size());
         for (unsigned int i = 0; i < trg.size(); i++)
             tps[i] = &(trg[i]);
-        root = build(tps); 
+        root = build(MAX_DEPTH, tps); 
     }
     ~KD_Tree() { delete root; }
 
@@ -45,7 +45,7 @@ private:
     bool intersectHelper(bool(*)(const vec3&, const vec3&, const vector<Triangle*>&, Intersection&, void*),
                    KD_Node *, vec3, vec3, Intersection&, void*);
 
-    static KD_Node *build(vector<Triangle*> trg){
+    static KD_Node *build(int depth, vector<Triangle*> trg){
         if (trg.empty())
             return nullptr;
         vector<Triangle*> leftTriangles;
@@ -104,7 +104,8 @@ private:
         if (leftTriangles.size() == trg.size()
                 || rightTriangles.size() == trg.size()
                 || leftTriangles.empty()
-                || rightTriangles.empty()) {
+                || rightTriangles.empty()
+                || depth <= 1) {
             node->leftchild = nullptr;
             node->rightchild = nullptr;
             node->triangles = trg;
@@ -113,8 +114,8 @@ private:
         }
 
         node->leaf = false;
-        node->leftchild = build(leftTriangles);
-        node->rightchild = build(rightTriangles);
+        node->leftchild = build(depth-1, leftTriangles);
+        node->rightchild = build(depth-1, rightTriangles);
         return node;
     }
 };
