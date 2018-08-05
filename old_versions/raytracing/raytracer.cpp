@@ -15,7 +15,8 @@ using glm::mat3;
 
 int main() {
     screen = InitializeSDL(SCREEN_WIDTH, SCREEN_HEIGHT, false);
-    LoadTestModel(triangles);
+    //LoadTestModel(triangles);
+    loadModel("models/box", triangles);
     t = SDL_GetTicks();    // Set start value for timer.
 
     while(NoQuitMessageSDL()) {
@@ -65,12 +66,6 @@ void draw() {
         SDL_LockSurface(screen);
 
     Intersection i;
-
-    // DEBUG
-    ClosestIntersection(
-            camera,
-            R*vec3(370-SCREEN_HEIGHT/2, 370-SCREEN_HEIGHT/2, focal),
-            triangles, i);
 
     for(int y=0; y < SCREEN_HEIGHT; ++y)
         for(int x=0; x < SCREEN_WIDTH; ++x)

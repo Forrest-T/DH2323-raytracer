@@ -3,6 +3,7 @@
 
 #include <glm/glm.hpp>
 #include <vector>
+#include <string>
 using glm::vec3;
 
 typedef struct triangle {
@@ -53,4 +54,27 @@ void LoadTestModel(std::vector<Triangle>& triangles) {
         triangles[i] = data[i];
 }
 
+vec3 computeNormal(vec3 v0, vec3 v1, vec3 v2) {
+    vec3 e1(v1-v0);
+    vec3 e2(v2-v0);
+    return glm::normalize(glm::cross(e2,e1));
+}
+
+void loadModel(std::string filepath, std::vector<Triangle> &triangles) {
+    FILE *stream = fopen(filepath.c_str(),"r");
+    char *line = NULL;
+    size_t len = 0;
+    ssize_t nread;
+
+    vec3 v0, v1, v2, norm, col;
+    while ((nread = getline(&line, &len, stream)) != -1) {
+        sscanf(line, "%f %f %f %f %f %f %f %f %f %f %f %f",
+                &v0.x, &v0.y, &v0.z, &v1.x, &v1.y, &v1.z,
+                &v2.x, &v2.y, &v2.z, &col.x, &col.y, &col.z);
+        norm = computeNormal(v0, v1, v2);
+        triangles.push_back({v0, v1, v2, norm, col});
+    }
+    free(line);
+    fclose(stream);
+}
 #endif
