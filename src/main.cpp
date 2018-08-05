@@ -19,7 +19,7 @@ int main() {
     Scene_Manager scene;
     scene.log_level = VERBOSE;
     //scene.loadBox();
-    scene.loadModel("models/out");
+    scene.loadModel("models/box");
 
     CL_Manager manager;
     manager.log_level = VERBOSE;
