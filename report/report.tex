@@ -9,6 +9,7 @@
 \usepackage{algorithm}
 \usepackage{algorithmic}
 \usepackage{booktabs}
+\usepackage{graphix}
 \IEEEoverridecommandlockouts                              % This command is only
                                                           % needed if you want to
                                                           % use the \thanks command
@@ -145,7 +146,12 @@ Depth & Cornell Box(ms) & Tiny Dragon (ms) & Medium Dragon(ms) \\ \midrule
 \end{tabular}
 \end{table}
 
-The ideal tree depth is about 7 or 8 for larger models before the overhead of traversal and redundant box-overlapping triangles becomes too much. Naturally, very small models start to suffer at lower depths than large models, where the ideal depth is expected to grow logarithmically. Finally, trials were done to measure how the render time reacts to different strategies at different triangle counts.
+The table produces the following chart:
+
+\includegraphics[scale=1]{chart_1.png} 
+
+
+As it can be seen, the ideal tree depth is about 7 or 8 for larger models before the overhead of traversal and redundant box-overlapping triangles becomes too much. Naturally, very small models start to suffer at lower depths than large models, where the ideal depth is expected to grow logarithmically. Finally, trials were done to measure how the render time reacts to different strategies at different triangle counts.
 
 \begin{table*}[t]
 \centering
